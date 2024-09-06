@@ -56,6 +56,8 @@ class ParaxialGaussianAnalytic(object):
         self.grid_shape = [dim.size for dim in grid]
 
         # Define additional field variables
+        self.x0, self.y0, self.z0 = self.focus_x
+        self.t0 = self.focus_t
         self.B0 = self.E0 / c
         self.k = 2. * pi / self.lmbd
         self.omega = c * self.k
@@ -72,7 +74,6 @@ class ParaxialGaussianAnalytic(object):
         self.phase_no_t = self.phase0 - self.k*self.r2/(2*self.R) + np.arctan(self.z/self.zR)
         self.E = self.E0 * self.w0/self.w * np.exp(-self.r2/self.w**2)
 
-
     def get_rotation(self):
         # Define rotation transforming (0,0,1) -> (kx,ky,kz) for vectors
         self.rotation = Rotation.from_euler('zyz', (self.phi,self.theta,self.beta))
@@ -88,10 +89,17 @@ class ParaxialGaussianAnalytic(object):
             self.__dict__[ax] = mx*(self.x_-self.x0) + my*(self.y_-self.y0) + mz*(self.z_-self.z0)
     
     def calculate_field(self, t):
-        psi_plane = self.w*(t-self.t0) - self.k*self.z
-        phase = self.psi_no_t + psi_plane
+        psi_plane = self.omega*(t-self.t0) - self.k*self.z
+        phase = self.phase_no_t + psi_plane
         Ex = self.E * np.exp(-(psi_plane/self.omega)**2/(self.tau/2)**2) * np.cos(phase)
-        return Ex
+
+        # Transform to the original coordinate frame
+        E = (Ex, 0., 0.)
+        E_out = (0., 0., 0.)
+        for i in range(3):
+            mx, my, mz = self.rotation_m[i]
+            E_out[i] = mx*E[0] + my*E[1] * mz*E[2]
+        return E_out
         
 
 
