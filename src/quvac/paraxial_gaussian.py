@@ -58,7 +58,7 @@ class ParaxialGaussianAnalytic(object):
 
         # Define grid variables
         self.grid = [ax.flatten() for ax in grid]
-        self.x_, self.y_, self.z_ = np.meshgrid(*grid, sparse=True)
+        self.x_, self.y_, self.z_ = np.meshgrid(*grid, indexing='ij', sparse=True)
         self.grid_shape = [dim.size for dim in grid]
         self.dV = np.prod([ax[1]-ax[0] for ax in self.grid])
 
