@@ -6,7 +6,7 @@ It is planned to add support for two versions:
 '''
 '''
 TODO:
-    - 
+    - Need a test for two colliding paraxial gaussians
 '''
 
 import numpy as np

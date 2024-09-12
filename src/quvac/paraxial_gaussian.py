@@ -6,11 +6,12 @@ TODO:
     - Check 0-order paraxial with plotting
     - Add next order paraxial Gaussians (???)
     - Rewrite the main computation with numexpr
+    - Add energy fix
 '''
 
 import numpy as np
 import numexpr as ne
-from scipy.constants import pi, c, epsilon_0
+from scipy.constants import pi, c, epsilon_0, mu_0
 from scipy.spatial.transform import Rotation
 
 
@@ -52,11 +53,14 @@ class ParaxialGaussianAnalytic(object):
                 self.__dict__[key] = val * np.pi / 180
             else:
                 self.__dict__[key] = val
+        if 'E0' not in field_params:
+            self.E0 = 1.
 
         # Define grid variables
         self.grid = [ax.flatten() for ax in grid]
         self.x_, self.y_, self.z_ = np.meshgrid(*grid, sparse=True)
         self.grid_shape = [dim.size for dim in grid]
+        self.dV = np.prod([ax[1]-ax[0] for ax in self.grid])
 
         # Define additional field variables
         self.x0, self.y0, self.z0 = self.focus_x
@@ -82,6 +86,9 @@ class ParaxialGaussianAnalytic(object):
         self.phase_no_t = ne.evaluate("phase0 - k*r2/(2*R) + arctan(z/zR)", global_dict=self.__dict__)
         self.E = ne.evaluate("E0 * w0/w * exp(-r2/w**2)", global_dict=self.__dict__)
 
+        if 'W' in field_params:
+            self.check_energy()
+
     def get_rotation(self):
         # Define rotation transforming (0,0,1) -> (kx,ky,kz) for vectors
         self.rotation = Rotation.from_euler('zyz', (self.phi,self.theta,self.beta))
@@ -96,6 +103,20 @@ class ParaxialGaussianAnalytic(object):
             self.mx, self.my, self.mz = self.rotation_bwd_m[i]
             self.__dict__[ax] = ne.evaluate("mx*(x_-x0) + my*(y_-y0) + mz*(z_-z0)",
                                             local_dict=self.__dict__)
+            
+    def check_energy(self):
+        E, B = self.calculate_field(t=0)
+        Ex, Ey, Ez = E
+        Bx, By, Bz = B
+        W = 0.5 * epsilon_0 * c**2 * self.dV * ne.evaluate('sum(Ex**2 + Ey**2 + Ez**2)')
+        W += 0.5/mu_0 * self.dV * ne.evaluate('sum(Bx**2 + By**2 + Bz**2)')
+
+        if not np.isclose(W, self.W, rtol=1e-5):
+            E_new = np.sqrt(self.W/W * self.E0**2)
+            self.E0 = E_new
+            self.B0 = self.E0 / c
+            self.E = ne.evaluate("E0 * w0/w * exp(-r2/w**2)", global_dict=self.__dict__)
+
     
     def calculate_field(self, t, E_out=None, B_out=None):
         self.psi_plane = ne.evaluate("omega*(t-t0) - k*z", global_dict=self.__dict__)
@@ -116,6 +137,7 @@ class ParaxialGaussianAnalytic(object):
             for i,Bi in enumerate(B_out):
                 mx, my, mz = self.rotation_m[i]
                 ne.evaluate('Bi + mx*Bx + my*By + mz*Bz', out=Bi)
+        return (Ex,Ey,Ez), (Bx,By,Bz)
         
 
 
