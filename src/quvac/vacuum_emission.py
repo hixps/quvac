@@ -16,7 +16,7 @@ from scipy.constants import pi, c, epsilon_0, alpha, m_e, hbar, e
 import pyfftw
 
 
-BS = m_e**2 * c**2 / (hbar * e)
+BS = m_e**2 * c**2 / (hbar * e) # Schwinger magnetic field
 eV_to_m = 1 / (0.197327*1e-6)
 
 
@@ -50,11 +50,11 @@ class VacuumEmission(object):
         self.F = F = "0.5 * (Bx**2 + By**2 + Bz**2 - Ex**2 - Ey**2 - Ez**2)"
         self.G = G ="-(Ex*Bx + Ey*By + Ez*Bz)"
         self.U1 = [f"4*E{ax}*{F} + 7*B{ax}*{G}" for ax in "xyz"]
-        self.U2 = [f"-4*B{ax}*{F} + 7*E{ax}*{G}" for ax in "xyz"]
-        # self.I_ij = {f"{i}{j}": f"e{i}[0]*U{j}[0] + e{i}[1]*U{j}[1] + e{i}[2]*U{j}[2]"
-        #              for i in range(2) for j in range(2)}
-        # for key,val in self.I_ij.items():
-        #     self.__dict__[f"I_{key}"] = val
+        self.U2 = [f"4*B{ax}*{F} - 7*E{ax}*{G}" for ax in "xyz"]
+        self.I_ij = {f"{i}{j}": f"e{i}x*U{j}_acc_x + e{i}y*U{j}_acc_y + e{i}z*U{j}_acc_z"
+                     for i in range(1,3) for j in range(1,3)}
+        for key,val in self.I_ij.items():
+            self.__dict__[f"I_{key}_expr"] = val
         # self.I = "cos(beta_p)*(I_11 - I_22) + sin(beta_p)*(I_12 + I_21)"
     
     def allocate_fields(self):
@@ -82,10 +82,16 @@ class VacuumEmission(object):
         for i,ax in enumerate('xyz'):
             grid = self.field.grid[i]
             self.__dict__[f'd{ax}'] = step = grid[1] - grid[0]
-            self.dV *= step
-            self.__dict__[f'k{ax}'] = 2*pi*np.fft.fftfreq(grid.size, step)
-            kstep = (self.__dict__[f'k{ax}'][1] - self.__dict__[f'k{ax}'][0]) / (2*pi)
+            # self.dV *= step
+            self.__dict__[f'k{ax}'] = k_ = 2*pi*np.fft.fftfreq(grid.size, step)
+            kstep = (k_[1] - k_[0]) #/ (2*pi)
             self.dVk *= kstep
+        N = np.prod(self.field.grid_shape)
+        self.V = V = (2.*np.pi)**3 / self.dVk
+        self.dV = V/N
+        print(self.dVk)
+        print(N)
+        print(self.dV)
         self.kmeshgrid = np.meshgrid(self.kx, self.ky, self.kz, indexing='ij', sparse=True)
         k_dict = {f'k{ax}': self.kmeshgrid[i] for i,ax in enumerate('xyz')}
         kx, ky, kz = k_dict["kx"], k_dict["ky"], k_dict["kz"]
@@ -98,6 +104,7 @@ class VacuumEmission(object):
             self.__dict__[f'k{ax}_unit'][0,0,0] = 0.
         self.e2x = ne.evaluate("where((kx==0) & (ky==0), 0.0, -ky / kperp)")
         self.e2y = ne.evaluate("where((kx==0) & (ky==0), 1.0, kx / kperp)")
+        self.e2z = 0.
 
         self.e1x = ne.evaluate("where((kx==0) & (ky==0), 1.0, kx * kz / (kperp*kabs))")
         self.e1y = ne.evaluate("where((kx==0) & (ky==0), 0.0, ky * kz / (kperp*kabs))")
@@ -117,7 +124,8 @@ class VacuumEmission(object):
                 ne.evaluate(expr, global_dict=self.__dict__, out=self.tmp[i])
                 self.tmp_fftw[i].execute()
                 self.U = self.tmp[i]
-                ne.evaluate(f"U{idx+1}_acc_{ax[i]} + U*exp(1j*kabs*t)*dt*weight",
+                omega = self.kabs*c
+                ne.evaluate(f"U{idx+1}_acc_{ax[i]} + U*exp(-1j*omega*t)*dt*weight*dV",
                             global_dict=self.__dict__, out=self.__dict__[f"U{idx+1}_acc_{ax[i]}"])
 
     def calculate_time_integral(self, t_grid, integration_method="trapezoid"):
@@ -125,8 +133,11 @@ class VacuumEmission(object):
         if integration_method == "trapezoid":
             end_pts = (0,len(t_grid)-1)
             for i,t in enumerate(t_grid):
-                weight = 0.5 if i in end_pts else 1
+                weight = 0.5 if i in end_pts else 1.
                 self.calculate_one_time_step(t, weight=weight)
+                # print("==========================================")
+                # print(self.U1_acc_x, self.U1_acc_y, self.U1_acc_z)
+                # print(self.U2_acc_x, self.U2_acc_y, self.U2_acc_z)
         else:
             raise NotImplementedError(f"""integration_method should be one of ['trapezoid'] but 
                                       you passed {integration_method}""")
@@ -136,21 +147,23 @@ class VacuumEmission(object):
         self.calculate_time_integral(t_grid, integration_method)
         self.free_resources()
         # Results should be in U1_acc and U2_acc
-        self.j = [0, 0, 0]
-        self.jx = ne.evaluate("-U1_acc_x + ky_unit*U2_acc_z - kz_unit*U2_acc_y",
-                              global_dict=self.__dict__)
-        self.jy = ne.evaluate("-U1_acc_y - kx_unit*U2_acc_z + kz_unit*U2_acc_x",
-                              global_dict=self.__dict__)
-        self.jz = ne.evaluate("-U1_acc_z + kx_unit*U2_acc_y - ky_unit*U2_acc_x",
-                              global_dict=self.__dict__)
-        np.savez(filename, jx=self.jx, jy=self.jy, jz=self.jz)
+        self.S1 = ne.evaluate(f"{self.I_11_expr} - {self.I_22_expr}", global_dict=self.__dict__)
+        self.S2 = ne.evaluate(f"{self.I_12_expr} + {self.I_21_expr}", global_dict=self.__dict__)
+        # self.j = [0, 0, 0]
+        # self.jx = ne.evaluate("U1_acc_x + ky_unit*U2_acc_z - kz_unit*U2_acc_y",
+        #                       global_dict=self.__dict__)
+        # self.jy = ne.evaluate("U1_acc_y - kx_unit*U2_acc_z + kz_unit*U2_acc_x",
+        #                       global_dict=self.__dict__)
+        # self.jz = ne.evaluate("U1_acc_z + kx_unit*U2_acc_y - ky_unit*U2_acc_x",
+        #                       global_dict=self.__dict__)
+        # np.savez(filename, jx=self.jx, jy=self.jy, jz=self.jz)
 
     def calculate_total_signal(self):
         # Calculate total signal
-        S1 = ne.evaluate("e1x*jx + e1y*jy + e1z*jz", global_dict=self.__dict__)
-        S2 = ne.evaluate("e2x*jx + e2y*jy", global_dict=self.__dict__)
-        S = ne.evaluate("S1.real**2 + S1.imag**2 + S2.real**2 + S2.imag**2")
-        prefactor = 1 / (2*pi)**1.5 / 45 * np.sqrt(alpha/2*self.kabs) / BS**3 * m_e**2 * c**2 / hbar**2
+        # S1 = ne.evaluate("e1x*jx + e1y*jy + e1z*jz", global_dict=self.__dict__)
+        # S2 = ne.evaluate("e2x*jx + e2y*jy", global_dict=self.__dict__)
+        S = ne.evaluate("S1.real**2 + S1.imag**2 + S2.real**2 + S2.imag**2", global_dict=self.__dict__)
+        prefactor = 1 / (2*pi)**1.5 / 45 * np.sqrt(alpha/2*self.kabs) / BS**3 * m_e**2 * c**3 / hbar**2
         # prefactor = 1 / (2*pi)**1.5 / 45 * np.sqrt(alpha/2*self.kabs) / BS**3 * (0.511*1e6*eV_to_m)**2
         # qe_natural = 0.3
         # prefactor = c**2.5 / hbar**2 * np.sqrt(1/2) * qe_natural/(4.*pi**2) * m_e**2 / 45. / BS**3 / (2*np.pi)**1.5
