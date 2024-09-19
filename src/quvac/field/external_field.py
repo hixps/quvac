@@ -3,21 +3,25 @@ This script provides uniform ExternalField class to unite all
 participating fields in one interface
 '''
 
-import numpy as np
-import numexpr as ne
-
-from quvac.paraxial_gaussian import ParaxialGaussianAnalytic
+from quvac.field.abc import Field
+from quvac.field.paraxial_gaussian import ParaxialGaussianAnalytic
 
 
-class ExternalField(object):
+class ExternalField(Field):
     '''
     Class to unite several participating fields under
     one interface
+
+    Parameters
+    ----------
+    fields_params: list of dicts (field_params)
+        External fields
+    grid: (1d-np.array, 1d-np.array, 1d-np.array)
+        xyz spatial grid to calculate fields on 
     '''
     def __init__(self, fields_params, grid):
         self.fields = []
-        self.grid = [ax.flatten() for ax in grid]
-        self.grid_shape = [dim.size for dim in grid]
+        self.grid = grid
 
         for field_params in fields_params:
             self.setup_field(field_params)

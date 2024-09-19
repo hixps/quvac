@@ -12,6 +12,17 @@ lam_C = hbar / (m_e*c)      # reduced Compton wavelength
 
 
 def get_two_paraxial_scaling(fields):
+    '''
+    This is a variation of Eq.(25) from F. Karbstein, et al. "Vacuum 
+    birefringence at x-ray free-electron lasers." New Journal of Physics 
+    23.9 (2021): 095001.
+    
+    We introduced additional polarization-dependent factors (beta). The 
+    formula should work for theta not close to 180, loose focusing and short 
+    pulse duration.
+
+    Note: result for N_perp should be used only for beta=45
+    '''
     theta_c = (fields[1]['theta'] - fields[0]['theta']) * pi / 180
     beta = (fields[1]['beta'] - fields[0]['beta']) * pi / 180
 
