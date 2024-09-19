@@ -7,11 +7,11 @@ Here we provide a test for vacuum emission integrator:
 import numpy as np
 from scipy.constants import pi, c
 
-from quvac.field.paraxial_gaussian import ParaxialGaussianAnalytic
 from quvac.field.external_field import ExternalField
 from quvac.integrator.vacuum_emission import VacuumEmission
 from quvac.grid_utils import get_xyz_size, get_t_size
 from quvac.analytic_scalings import get_two_paraxial_scaling
+from quvac.grid import GridXYZ
 
 
 def test_two_paraxial_gaussians():
@@ -58,10 +58,10 @@ def test_two_paraxial_gaussians():
     box_size = np.array([x0, y0, z0])
     Nxyz = get_xyz_size(fields_params, box_size/2)
     Nx, Ny, Nz = Nxyz
-    x = np.linspace(-x0/2,x0/2,Nx).reshape((-1,1,1))
-    y = np.linspace(-y0/2,y0/2,Ny).reshape((1,-1,1))
-    z = np.linspace(-z0/2,z0/2,Nz).reshape((1,1,-1))
-    grid = (x, y, z)
+    x = np.linspace(-x0/2,x0/2,Nx)
+    y = np.linspace(-y0/2,y0/2,Ny)
+    z = np.linspace(-z0/2,z0/2,Nz)
+    grid = GridXYZ((x, y, z))
 
     t0 = 2*tau
     Nt = get_t_size(-t0, t0, lam)
@@ -72,8 +72,8 @@ def test_two_paraxial_gaussians():
 
     # Calculate signal numerically
     field = ExternalField(fields_params, grid)
-    vacem = VacuumEmission(field)
-    vacem.calculate_vacuum_current(t_grid)
+    vacem = VacuumEmission(field, grid)
+    vacem.calculate_amplitudes(t_grid)
     N_signal_num = vacem.calculate_total_signal()
 
     print(f"Total signal (theory): {N_signal_th:.3f}")

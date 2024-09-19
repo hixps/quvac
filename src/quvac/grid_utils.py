@@ -32,8 +32,9 @@ def get_kmax_grid(field_params):
         Required keys: lam, tau, w0/w0x, theta, phi
         theta, phi in degrees
     '''
-    # required_keys = 'lam tau theta phi'.split()
-    # assert required_keys in field_params, f"Field parameters must have {required_keys} keys"
+    required_keys = 'lam tau theta phi'.split()
+    err_msg = f"Field parameters must have {required_keys} keys"
+    assert all(key in field_params for key in required_keys), err_msg
 
     lam, tau = field_params['lam'], field_params['tau']
     theta, phi = field_params['theta'], field_params['phi']
@@ -44,10 +45,7 @@ def get_kmax_grid(field_params):
     
     k = 2*np.pi/lam    
     theta *= pi/180
-    phi *= pi/180
-
-    if np.sin(theta) == 0.0:
-        phi = 0.0
+    phi = phi*pi/180 if np.sin(theta) != 0. else 0.
     
     ek = get_ek(theta, phi)
     e1, e2 = get_pol_basis(theta, phi)

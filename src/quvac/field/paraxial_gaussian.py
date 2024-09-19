@@ -2,7 +2,6 @@
 '''
 TODO:
     - Add next order paraxial Gaussians (???)
-    - Rewrite the main computation with numexpr
 '''
 
 import numpy as np
@@ -66,10 +65,11 @@ class ParaxialGaussianAnalytic(AnalyticField):
             self.E0 = 1.
 
         # Define grid variables
-        self.grid = tuple(ax for ax in grid)
-        self.grid_shape = tuple(ax.size for ax in grid)
-        self.x_, self.y_, self.z_ = np.meshgrid(*grid, indexing='ij', sparse=True)
-        self.dV = np.prod([ax[1]-ax[0] for ax in grid])
+        self.grid = grid
+        grid_keys = 'grid_shape xyz dV'.split()
+        self.__dict__.update({k:v for k,v in self.grid.__dict__.items() 
+                              if k in grid_keys})
+
 
         # Define additional field variables
         self.x0, self.y0, self.z0 = self.focus_x
@@ -107,6 +107,7 @@ class ParaxialGaussianAnalytic(AnalyticField):
     def rotate_coordinates(self):
         self.get_rotation()
         axes = 'xyz'
+        x_, y_, z_ = self.xyz
         for i,ax in enumerate(axes):
             mx, my, mz = self.rotation_bwd_m[i]
             self.__dict__[ax] = ne.evaluate("mx*(x_-x0) + my*(y_-y0) + mz*(z_-z0)",
