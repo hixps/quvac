@@ -124,20 +124,20 @@ class VacuumEmission(object):
 
     def save_amplitudes(self, save_path):
         Path(os.path.dirname(save_path)).mkdir(parents=True, exist_ok=True)
-        data = {'x': self.x,
-                'y': self.y,
-                'z': self.z,
+        data = {'x': self.grid[0],
+                'y': self.grid[1],
+                'z': self.grid[2],
                 'S1': self.S1,
                 'S2': self.S2}
         np.savez(save_path, **data)
 
-    def calculate_total_signal(self):
-        # Calculate total signal
-        S = ne.evaluate("S1.real**2 + S1.imag**2 + S2.real**2 + S2.imag**2",
-                        global_dict=self.__dict__)
-        Ntot = ne.evaluate("sum(S * dVk/(2*pi)**3)",
-                           global_dict=self.__dict__ | {'pi': pi})
-        return Ntot
+    # def calculate_total_signal(self):
+    #     # Calculate total signal
+    #     S = ne.evaluate("S1.real**2 + S1.imag**2 + S2.real**2 + S2.imag**2",
+    #                     global_dict=self.__dict__)
+    #     Ntot = ne.evaluate("sum(S * dVk/(2*pi)**3)",
+    #                        global_dict=self.__dict__ | {'pi': pi})
+    #     return Ntot
 
 
         
