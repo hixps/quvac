@@ -5,19 +5,24 @@ do postprocessing and measure performance
 '''
 
 import argparse
+import logging
 import os
 from pathlib import Path
 import time
 import resource
 
 import numpy as np
+import numexpr as ne
+import pyfftw
 
 from quvac.field.external_field import ExternalField
 from quvac.integrator.vacuum_emission import VacuumEmission
 from quvac.grid_utils import setup_grids
 from quvac.postprocess import VacuumEmissionAnalyzer
-from quvac.utils import read_yaml, write_yaml, format_memory, format_time
+from quvac.utils import (read_yaml, write_yaml, format_memory, format_time,
+                         load_wisdom, save_wisdom)
 
+logger = logging.getLogger(__name__)
 
 # ini yaml structure
 '''
@@ -65,7 +70,7 @@ Total:                     {:>15s}
 '''
 
 
-def print_performance_stats(perf_stats):
+def get_performance_stats(perf_stats):
     timings = perf_stats['timings']
     timings = {
         'field_setup': timings['field_setup']-timings['start'],
@@ -81,7 +86,7 @@ def print_performance_stats(perf_stats):
                                         timings['total'],
                                         memory['maxrss_amplitudes'],
                                         memory['maxrss_total'])
-    print(perf_print) 
+    return perf_print 
 
 
 def parse_args():
@@ -91,10 +96,12 @@ def parse_args():
                            help="Input yaml file with field and grid params")
     argparser.add_argument("--output", "-o", default=None,
                            help="Path to save simulation data to")
+    argparser.add_argument("--wisdom", default='wisdom/fftw-wisdom',
+                           help="File to save pyfftw-wisdom")
     return argparser.parse_args()
 
 
-def quvac_simulation(ini_file, save_path=None):
+def quvac_simulation(ini_file, save_path=None, wisdom_file=None):
     '''
     Launch a single quvac simulation for given <ini>.yaml file
 
@@ -113,25 +120,43 @@ def quvac_simulation(ini_file, save_path=None):
         Path(save_path).mkdir(parents=True, exist_ok=True)
     amplitudes_file = os.path.join(save_path, 'amplitudes.npz')
     spectra_file = os.path.join(save_path, 'spectra.npz')
+    
+    # Setup logger
+    logger_file = os.path.join(save_path, 'simulation.log')
+    logging.basicConfig(filename=logger_file, encoding='utf-8', level=logging.DEBUG,
+                        format=f'%(asctime)s %(message)s')
 
     # Load and parse ini yaml file
     ini_config = read_yaml(ini_file)
     fields_params = ini_config["fields"]
     grid_params = ini_config["grid"]
     perf_params = ini_config["performance"]
+    
+    # Set up number of threads
+    nthreads = perf_params.get('nthreads', os.cpu_count())
+    ne.set_num_threads(nthreads)
+    pyfftw.config.NUM_THREADS = nthreads
+
+    # Load fftw-wisdom if possible
+    if os.path.exists(wisdom_file):
+        pyfftw.import_wisdom(load_wisdom(wisdom_file))
 
     # Get grids
     grid_xyz, grid_t = setup_grids(fields_params, grid_params)
+    logger.info("Grids are created")
 
     # Field setup
     time_start = time.perf_counter()
     field = ExternalField(fields_params, grid_xyz)
     time_field_setup = time.perf_counter()
+    logger.info("Fields are set up")
+
     # Calculate amplitudes
-    vacem = VacuumEmission(field, grid_xyz)
+    vacem = VacuumEmission(field, grid_xyz, nthreads)
     vacem.calculate_amplitudes(grid_t, save_path=amplitudes_file)
     time_amplitudes = time.perf_counter()
     maxrss_amplitudes = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    logger.info("Amplitudes are calculated")
 
     del field, vacem
 
@@ -139,6 +164,10 @@ def quvac_simulation(ini_file, save_path=None):
     analyzer = VacuumEmissionAnalyzer(amplitudes_file, spectra_file)
     analyzer.get_spectra()
     time_postprocess = time.perf_counter()
+    logger.info("Spectra calculated from amplitudes")
+
+    # Save gained wisdom (for fftw)
+    save_wisdom(ini_file, wisdom_file)
 
     # Performance estimation
     timings = {
@@ -160,13 +189,13 @@ def quvac_simulation(ini_file, save_path=None):
         'memory': memory
     }
 
-    print_performance_stats(perf_stats)
+    perf_print = get_performance_stats(perf_stats)
+    print(perf_print)
+    logger.info(perf_print)
 
     print("Simulation finished!")
 
 
 if __name__ == '__main__':
     args = parse_args()
-    print(args.input)
-    print(args.output)
-    quvac_simulation(args.input, args.output)
+    quvac_simulation(args.input, args.output, args.wisdom)
