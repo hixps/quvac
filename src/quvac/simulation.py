@@ -133,7 +133,7 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file=None):
     perf_params = ini_config["performance"]
     
     # Set up number of threads
-    nthreads = perf_params['nthreads']
+    nthreads = perf_params.get('nthreads', os.cpu_count())
     ne.set_num_threads(nthreads)
     pyfftw.config.NUM_THREADS = nthreads
 
