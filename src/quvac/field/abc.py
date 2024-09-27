@@ -57,8 +57,8 @@ class MaxwellField(Field):
     def allocate_ifft(self):
         self.EB = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
                    for _ in range(6)]
-        self.EB_ = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
-                   for _ in range(6)]
+        # self.EB_ = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
+        #            for _ in range(6)]
         # pyfftw scheme
         self.EB_fftw = [pyfftw.FFTW(a, a, axes=(0, 1, 2),
                                     direction='FFTW_BACKWARD',
@@ -113,9 +113,9 @@ class MaxwellField(Field):
         for i,field in enumerate('EB'):
             for j,ax in enumerate('xyz'):
                 idx = 3*i + j
-                field_comp = self.EB_[idx]
-                # field_comp = self.__dict__[f'{field}f{ax}_expr']
-                ne.evaluate(f"prefactor * field_comp", global_dict=self.__dict__,
+                # field_comp = self.EB_[idx]
+                field_comp = self.__dict__[f'{field}f{ax}_expr']
+                ne.evaluate(f"prefactor * {field_comp}", global_dict=self.__dict__,
                              out=self.EB[idx])
                 self.EB_fftw[idx].execute()
         
@@ -123,9 +123,12 @@ class MaxwellField(Field):
             E_out = [np.zeros(self.grid_shape) for _ in range(3)]
             B_out = [np.zeros(self.grid_shape) for _ in range(3)]
         norm = self.dVk / (2*pi)**3
+        # problem that one should add fields in complex domain?
         for idx,(Ei,Bi) in enumerate(zip(E_out, B_out)):
-            Ei += np.real(self.EB[idx])*norm
-            Bi += np.real(self.EB[3+idx])*norm
+            Ei += self.EB[idx]*norm
+            Bi += self.EB[3+idx]*norm
+            # Ei += np.real(self.EB[idx])*norm
+            # Bi += np.real(self.EB[3+idx])*norm
         return E_out, B_out
 
 

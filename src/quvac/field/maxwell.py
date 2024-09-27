@@ -31,13 +31,13 @@ class ParaxialGaussianMaxwell(MaxwellField):
         # Initialize the analytic class and calculate ini field
         ini_field = ParaxialGaussianAnalytic(field_params, grid)
         self.t0, self.W = ini_field.t0, ini_field.W
-        E_ini, _ = ini_field.calculate_field(self.t0, E_out=self.Ef, mode='complex')
+        E_ini, _ = ini_field.calculate_field(self.t0, mode='complex')
 
         # Get a1,a2 coefficients
         self.get_a12(E_ini)
-        self.shift_arrays()
+        # self.shift_arrays()
         self.allocate_ifft()
-        self.get_fourier_fields()
+        # self.get_fourier_fields()
 
     def calculate_field(self, t, E_out=None, B_out=None):
         return super().calculate_field(t, E_out, B_out)
