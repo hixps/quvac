@@ -59,8 +59,8 @@ class MaxwellField(Field):
         self.EB = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
                    for _ in range(6)]
         self.prefactor = pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
-        # self.EB_ = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
-        #            for _ in range(6)]
+        self.EB_ = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
+                   for _ in range(6)]
         # pyfftw scheme
         self.EB_fftw = [pyfftw.FFTW(a, a, axes=(0, 1, 2),
                                     direction='FFTW_BACKWARD',
@@ -90,6 +90,9 @@ class MaxwellField(Field):
         self.a1 *= np.sqrt(self.W/W_upd)
         self.a2 *= np.sqrt(self.W/W_upd)
 
+        self.a1 *= 1j*self.kabs
+        self.a2 *= 1j*self.kabs
+
         del self.Ef, E, self.Ef_fftw, self.Efx, self.Efy, self.Efz
 
         return self.a1, self.a2
@@ -99,12 +102,12 @@ class MaxwellField(Field):
         for name in to_shift:
             self.__dict__[name] = np.fft.fftshift(self.__dict__[name])
 
-    # def get_fourier_fields(self):
-    #     for i,field in enumerate('EB'):
-    #         for j,ax in enumerate('xyz'):
-    #             idx = 3*i + j
-    #             ne.evaluate(self.__dict__[f'{field}f{ax}_expr'], global_dict=self.__dict__,
-    #                         out=self.EB_[idx])
+    def get_fourier_fields(self):
+        for i,field in enumerate('EB'):
+            for j,ax in enumerate('xyz'):
+                idx = 3*i + j
+                ne.evaluate(self.__dict__[f'{field}f{ax}_expr'], global_dict=self.__dict__,
+                            out=self.EB_[idx])
 
     
     def calculate_field(self, t, E_out=None, B_out=None):
@@ -116,23 +119,27 @@ class MaxwellField(Field):
         # Calculate fourier of fields at time t and transform back to 
         # spatial domain
         # prefactor = ne.evaluate("exp(-1j*omega*t) * 1j*kabs", global_dict=self.__dict__)
-        ne.evaluate("exp(-1j*omega*t) * 1j*kabs", global_dict=self.__dict__,
+        ne.evaluate("exp(-1j*omega*t)", global_dict=self.__dict__,
                     out=self.prefactor)
+        # ne.evaluate("exp(-1j*omega*t) * 1j*kabs", global_dict=self.__dict__,
+        #             out=self.prefactor)
         for i,field in enumerate('EB'):
             for j,ax in enumerate('xyz'):
                 idx = 3*i + j
-                # field_comp = self.EB_[idx]
-                field_comp = self.__dict__[f'{field}f{ax}_expr']
-                ne.evaluate(f"prefactor * {field_comp}", global_dict=self.__dict__,
-                             out=self.EB[idx])
+                field_comp = self.EB_[idx]
+                # field_comp = self.__dict__[f'{field}f{ax}_expr']
+                ne.evaluate(f"prefactor * field_comp * norm_ifft", global_dict=self.__dict__,
+                            out=self.EB[idx])
                 self.EB_fftw[idx].execute()
         
         # problem that one should add fields in complex domain?
         for idx,(Ei,Bi) in enumerate(zip(E_out, B_out)):
-            Ei += self.EB[idx]*self.norm_ifft
-            Bi += self.EB[3+idx]*self.norm_ifft
-            # Ei += np.real(self.EB[idx])*norm
-            # Bi += np.real(self.EB[3+idx])*norm
+            # Ei += self.EB[idx]*self.norm_ifft
+            # Bi += self.EB[3+idx]*self.norm_ifft
+            # Ei += np.real(self.EB[idx])*self.norm_ifft
+            # Bi += np.real(self.EB[3+idx])*self.norm_ifft
+            Ei += np.real(self.EB[idx])
+            Bi += np.real(self.EB[3+idx])
         return E_out, B_out
 
 
