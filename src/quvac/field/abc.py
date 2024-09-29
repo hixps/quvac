@@ -110,7 +110,7 @@ class MaxwellField(Field):
             E_out = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
             B_out = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
         
-        self.allocate_ifft()
+        # self.allocate_ifft()
         # Calculate fourier of fields at time t and transform back to 
         # spatial domain
         prefactor = ne.evaluate("exp(-1j*omega*t) * 1j*kabs", global_dict=self.__dict__)
