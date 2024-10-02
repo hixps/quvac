@@ -39,6 +39,10 @@ class VacuumEmission(object):
 
         self.nthreads = nthreads if nthreads else os.cpu_count()
 
+        self.exp_shift_fft = sum([kx*x.flatten()[0] for kx,x in zip(self.kmeshgrid, self.xyz)])
+        self.exp_shift_fft = ne.evaluate('exp(-1j*exp_shift_fft)', 
+                                           global_dict=self.__dict__)
+
         # Define symbolic expressions to evaluate later
         self.F_expr = F = "0.5 * (Bx**2 + By**2 + Bz**2 - Ex**2 - Ey**2 - Ez**2)"
         self.G_expr = G ="-(Ex*Bx + Ey*By + Ez*Bz)"
@@ -101,8 +105,9 @@ class VacuumEmission(object):
             for i,expr in enumerate(U_expr):
                 ne.evaluate(expr, global_dict=self.__dict__, out=self.tmp[i])
                 self.tmp_fftw[i].execute()
-                self.U = self.tmp[i]
-                ne.evaluate(f"U{idx+1}_acc_{ax[i]} + U*exp(1j*omega*t)*dt*weight*dV",
+                # self.tmp[i] *= self.exp_shift_fft
+                self.U = self.tmp[i] * self.exp_shift_fft
+                ne.evaluate(f"U{idx+1}_acc_{ax[i]} + U*exp(-1j*omega*t)*dt*weight*dV",
                             global_dict=self.__dict__, out=self.__dict__[f"U{idx+1}_acc_{ax[i]}"])
                 # U_acc = self.__dict__[f"U{idx+1}_acc_{ax[i]}"]
                 # ne.evaluate(f"U_acc + U*exp(1j*omega*t)*dt*weight*dV",

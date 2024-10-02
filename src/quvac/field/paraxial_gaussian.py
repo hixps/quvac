@@ -56,8 +56,9 @@ class ParaxialGaussianAnalytic(AnalyticField):
         angles = 'theta phi beta phase0'.split()
         for key,val in field_params.items():
             if key in angles:
-                val *= pi / 180
+                val *= pi / 180.
             self.__dict__[key] = val
+        # self.phase0 += pi/2.
 
         if 'E0' not in field_params:
             assert 'W' in field_params, """Field params need to have either 
@@ -83,12 +84,19 @@ class ParaxialGaussianAnalytic(AnalyticField):
         self.rotate_coordinates()
 
         # Define variables not depending on time step
-        self.w = "(w0 * sqrt(1 + (z/zR)**2))"
-        self.r2 = "(x**2 + y**2)"
-        self.R = "(z + zR**2/z)"
-        self.E_expr = f"B0 * w0/{self.w} * exp(-{self.r2}/{self.w}**2)"
-        self.phase_no_t = ne.evaluate(f"phase0 - k*{self.r2}/(2*{self.R}) + arctan(z/zR)",
+        # self.w = "(w0 * sqrt(1. + (z/zR)**2))"
+        # self.r2 = "(x**2 + y**2)"
+        # self.R = "(z + zR**2/z)"
+        # self.E_expr = f"B0 * w0/{self.w} * exp(-{self.r2}/{self.w}**2)"
+        # self.phase_no_t = ne.evaluate(f"phase0 - k*{self.r2}/(2.*{self.R}) + arctan(z/zR)",
+        #                               global_dict=self.__dict__)
+        self.w = ne.evaluate("(w0 * sqrt(1. + (z/zR)**2))", global_dict=self.__dict__)
+        self.r = ne.evaluate("sqrt(x**2 + y**2)", global_dict=self.__dict__)
+        self.R = ne.evaluate("(z + zR**2/z)", global_dict=self.__dict__)
+        self.E_expr = f"B0 * w0/w * exp(-(r/w)**2)"
+        self.phase_no_t = ne.evaluate(f"phase0 - k*r**2/(2.*R) + arctan(z/zR)",
                                       global_dict=self.__dict__)
+        
         self.E = ne.evaluate(self.E_expr, global_dict=self.__dict__)
 
         # Set up correct field amplitude
@@ -128,13 +136,16 @@ class ParaxialGaussianAnalytic(AnalyticField):
         self.psi_plane = ne.evaluate("omega*(t-t0) - k*z", global_dict=self.__dict__)
         self.phase = "(phase_no_t + psi_plane)"
         if mode == 'real':
-            Ex = ne.evaluate(f"E * exp(-(psi_plane/omega)**2/(tau/2)**2) * cos({self.phase})",
+            Ex = ne.evaluate(f"E * exp(-(psi_plane/omega)**2/(tau/2.)**2) * cos({self.phase})",
                             global_dict=self.__dict__)
         else:
-            Ex = ne.evaluate(f"E * exp(-(psi_plane/omega)**2/(tau/2)**2) * exp(1j*{self.phase})",
+            s0 = ne.evaluate(f'exp(1.j*{self.phase})', global_dict=self.__dict__)
+            Ex = ne.evaluate(f"E * exp(-(2.*psi_plane/(omega*tau))**2) * s0",
                             global_dict=self.__dict__)
+            # Ex = ne.evaluate(f"E * exp(-(2.*psi_plane/(omega*tau))**2) * exp(1.j*{self.phase})",
+            #                 global_dict=self.__dict__)
         Ey, Ez = 0., 0.
-        By = Ex
+        By = Ex.copy()
         Bx, Bz = 0., 0.
         dtype = np.float64 if mode == 'real' else np.complex128
         if E_out is None:

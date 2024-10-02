@@ -23,16 +23,30 @@ class ParaxialGaussianMaxwell(MaxwellField):
         self.grid.get_k_grid()
         self.__dict__.update(self.grid.__dict__)
 
+        k_grid = [np.fft.fftshift(kx) for kx in self.kgrid]
+        phi0 = sum([x[0]*kx[0] for x,kx in zip(self.grid, k_grid)])
+
+        # self.exp_shift = sum([kx[0]*x for kx,x in zip(k_grid, self.xyz)])
+        # self.exp_shift = ne.evaluate('exp(-1j*exp_shift)', global_dict=self.__dict__)
+
+        self.exp_shift_fft = sum([kx*x.flatten()[0] for kx,x in zip(self.kmeshgrid, self.xyz)])
+        self.exp_shift_fft = ne.evaluate('exp(-1j*exp_shift_fft)', 
+                                           global_dict=self.__dict__)
+        
+        self.exp_shift_ifft = sum([np.fft.fftshift(kx)[0]*x for kx,x in zip(self.kgrid, self.xyz)])
+        self.exp_shift_ifft = ne.evaluate('exp(1j*exp_shift_ifft)', 
+                                           global_dict=self.__dict__)
+
         self.nthreads = nthreads if nthreads else os.cpu_count()
 
         # Initialize base class
         super().__init__()
         self.allocate_fft()
 
-        self.W = 0
+        self.W = 0.
 
         # Initialize the analytic class and calculate ini field
-        E_ini = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
+        self.E_ini = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
                       for _ in range(3)]
         if isinstance(field_params, dict):
             field_params = [field_params]
@@ -42,8 +56,10 @@ class ParaxialGaussianMaxwell(MaxwellField):
             self.W += ini_field.W
             ini_field.calculate_field(self.t0, E_out=self.Ef, mode='complex')
 
+        for i in range(3):
+            self.E_ini[i] += self.Ef[i].copy()
         # Get a1,a2 coefficients
-        self.get_a12(E_ini)
+        self.get_a12(self.E_ini)
         # self.shift_arrays()
         self.allocate_ifft()
         self.get_fourier_fields()
@@ -68,12 +84,18 @@ class ParaxialGaussianMaxwellMultiple(MaxwellField):
 
         self.a1, self.a2 = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
                             for _ in range(2)]
+        self.E_ini = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
+                      for _ in range(3)]
 
         for param in field_params:
             field = ParaxialGaussianMaxwell(param, grid, nthreads)
             self.t0 = field.t0
             self.a1 += field.a1
             self.a2 += field.a2
+            for i in range(3):
+                self.E_ini[i] += field.E_ini[i]
+        
+        self.__dict__.update(field.__dict__)
         
         self.allocate_ifft()
         self.get_fourier_fields()
