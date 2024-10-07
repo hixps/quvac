@@ -58,7 +58,7 @@ class ParaxialGaussianAnalytic(AnalyticField):
             if key in angles:
                 val *= pi / 180.
             self.__dict__[key] = val
-        # self.phase0 += pi/2.
+        self.phase0 += pi/2.
 
         if 'E0' not in field_params:
             assert 'W' in field_params, """Field params need to have either 
@@ -133,14 +133,15 @@ class ParaxialGaussianAnalytic(AnalyticField):
 
     
     def calculate_field(self, t, E_out=None, B_out=None, mode='real'):
+        k = 2. * pi / self.lam
         self.psi_plane = ne.evaluate("omega*(t-t0) - k*z", global_dict=self.__dict__)
         self.phase = "(phase_no_t + psi_plane)"
         if mode == 'real':
             Ex = ne.evaluate(f"E * exp(-(psi_plane/omega)**2/(tau/2.)**2) * cos({self.phase})",
                             global_dict=self.__dict__)
         else:
-            s0 = ne.evaluate(f'exp(1.j*{self.phase})', global_dict=self.__dict__)
-            Ex = ne.evaluate(f"E * exp(-(2.*psi_plane/(omega*tau))**2) * s0",
+            s0 = ne.evaluate(f'exp(-1.j*{self.phase})', global_dict=self.__dict__)
+            Ex = ne.evaluate(f"E * 1.j*exp(-(2.*psi_plane/(omega*tau))**2) * s0",
                             global_dict=self.__dict__)
             # Ex = ne.evaluate(f"E * exp(-(2.*psi_plane/(omega*tau))**2) * exp(1.j*{self.phase})",
             #                 global_dict=self.__dict__)

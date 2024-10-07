@@ -68,10 +68,10 @@ class VacuumEmission(object):
     #         self.Ex, self.Ey, self.Ez = self.E_out
     #         self.Bx, self.By, self.Bz = self.B_out
     def allocate_fields(self):
-        self.E_out = [np.zeros(self.grid_shape) for _ in range(3)]
-        self.B_out = [np.zeros(self.grid_shape) for _ in range(3)]
-        self.Ex, self.Ey, self.Ez = self.E_out
-        self.Bx, self.By, self.Bz = self.B_out
+        self.E_out = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
+        self.B_out = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
+        # self.Ex, self.Ey, self.Ez = self.E_out
+        # self.Bx, self.By, self.Bz = self.B_out
 
     def allocate_result_arrays(self):
         self.U1_acc = [np.zeros(self.grid_shape, dtype='complex128') for _ in range(3)]
@@ -97,6 +97,8 @@ class VacuumEmission(object):
         # Calculate fields
         self.allocate_fields()
         self.field.calculate_field(t, E_out=self.E_out, B_out=self.B_out)
+        self.Ex, self.Ey, self.Ez = [E.real for E in self.E_out]
+        self.Bx, self.By, self.Bz = [B.real for B in self.B_out]
         ne.evaluate(self.F_expr, global_dict=self.__dict__, out=self.F)
         ne.evaluate(self.G_expr, global_dict=self.__dict__, out=self.G)
         # Evaluate U1 and U2 expressions
@@ -106,7 +108,7 @@ class VacuumEmission(object):
                 ne.evaluate(expr, global_dict=self.__dict__, out=self.tmp[i])
                 self.tmp_fftw[i].execute()
                 # self.tmp[i] *= self.exp_shift_fft
-                self.U = self.tmp[i] * self.exp_shift_fft
+                self.U = self.tmp[i] #* self.exp_shift_fft
                 ne.evaluate(f"U{idx+1}_acc_{ax[i]} + U*exp(-1j*omega*t)*dt*weight*dV",
                             global_dict=self.__dict__, out=self.__dict__[f"U{idx+1}_acc_{ax[i]}"])
                 # U_acc = self.__dict__[f"U{idx+1}_acc_{ax[i]}"]

@@ -75,6 +75,7 @@ class MaxwellField(Field):
         # self.allocate_fft()
         # self.Ef = [0,0,0]
         for idx in range(3):
+            self.Ef[idx] = E[idx]
             # self.Ef[idx] = pyfftw.interfaces.numpy_fft.fftn(self.Ef[idx], axes=(0,1,2), norm='backward')
             self.Ef_fftw[idx].execute()
             self.Ef[idx] *= self.exp_shift_fft
@@ -91,8 +92,8 @@ class MaxwellField(Field):
         # Fix energy
         W_upd = get_field_energy_kspace(self.a1, self.a2, self.kabs, self.dVk, mode='without 1/k')
         print(W_upd)
-        self.a1 *= np.sqrt(self.W/W_upd)
-        self.a2 *= np.sqrt(self.W/W_upd)
+        self.a1 *= np.sqrt(self.W/W_upd) #/ (2*pi)**1.5
+        self.a2 *= np.sqrt(self.W/W_upd) #/ (2*pi)**1.5
 
         # self.a1 *= 1j*self.kabs
         # self.a2 *= 1j*self.kabs
@@ -113,7 +114,6 @@ class MaxwellField(Field):
                 ne.evaluate(self.__dict__[f'{field}f{ax}_expr'], global_dict=self.__dict__,
                             out=self.EB_[idx])
 
-    
     def calculate_field(self, t, E_out=None, B_out=None):
         if E_out is None:
             E_out = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
@@ -123,7 +123,7 @@ class MaxwellField(Field):
         # Calculate fourier of fields at time t and transform back to 
         # spatial domain
         # prefactor = ne.evaluate("exp(-1j*omega*t) * 1j*kabs", global_dict=self.__dict__)
-        ne.evaluate("exp(-1j*omega*(t-t0)) * norm_ifft", global_dict=self.__dict__,
+        ne.evaluate("exp(-1j*omega*(t-t0))", global_dict=self.__dict__,
                     out=self.prefactor)
         # ne.evaluate("exp(-1j*omega*t) * 1j*kabs", global_dict=self.__dict__,
         #             out=self.prefactor)
@@ -133,7 +133,8 @@ class MaxwellField(Field):
             ne.evaluate(f"prefactor * field_comp", global_dict=self.__dict__ | {'field_comp': self.EB_[idx]},
                         out=self.EB[idx])
             self.EB_fftw[idx].execute()
-            self.EB[idx] *= self.exp_shift_ifft
+            self.EB[idx] *= self.norm_ifft
+            # self.EB[idx] *= self.exp_shift_ifft * self.norm_ifft
         # for i,field in enumerate('EB'):
         #     for j,ax in enumerate('xyz'):
         #         idx = 3*i + j
@@ -144,13 +145,14 @@ class MaxwellField(Field):
         #         self.EB_fftw[idx].execute()
         
         # problem that one should add fields in complex domain?
-        for idx,(Ei,Bi) in enumerate(zip(E_out, B_out)):
-            # Ei += self.EB[idx]*self.norm_ifft
-            # Bi += self.EB[3+idx]*self.norm_ifft
+        # for idx,(Ei,Bi) in enumerate(zip(E_out, B_out)):
+        for idx in range(3):
+            E_out[idx] += np.fft.fftshift(self.EB[idx])
+            B_out[idx] += np.fft.fftshift(self.EB[3+idx])
             # Ei += np.real(self.EB[idx])*self.norm_ifft
             # Bi += np.real(self.EB[3+idx])*self.norm_ifft
-            Ei += np.real(self.EB[idx])
-            Bi += np.real(self.EB[3+idx])
+            # Ei += np.real(self.EB[idx])
+            # Bi += np.real(self.EB[3+idx])
         return E_out, B_out
 
 
