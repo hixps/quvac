@@ -99,8 +99,8 @@ class VacuumEmission(object):
         self.field.calculate_field(t, E_out=self.E_out, B_out=self.B_out)
         Ex, Ey, Ez = [E.real for E in self.E_out]
         Bx, By, Bz = [B.real for B in self.B_out]
-        ne.evaluate(self.F_expr, global_dict=self.__dict__, out=self.F)
-        ne.evaluate(self.G_expr, global_dict=self.__dict__, out=self.G)
+        ne.evaluate(self.F_expr, out=self.F)
+        ne.evaluate(self.G_expr, out=self.G)
         
         # Evaluate U1 and U2 expressions
         ax = 'xyz'

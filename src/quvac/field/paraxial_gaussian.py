@@ -121,7 +121,7 @@ class ParaxialGaussianAnalytic(AnalyticField):
         self.w = ne.evaluate("(w0 * sqrt(1. + (z/zR)**2))", global_dict=self.__dict__)
         self.r = ne.evaluate("sqrt(x**2 + y**2)", global_dict=self.__dict__)
         self.R = ne.evaluate("(z + zR**2/z)", global_dict=self.__dict__)
-        self.E_expr = f"B0 * w0/w * exp(-(r/w)**2)"
+        self.E_expr = f"B0 * w0/w * exp(-r**2/w**2)"
         self.phase_no_t = ne.evaluate(f"phase0 - k*r**2/(2.*R) + arctan(z/zR)",
                                       global_dict=self.__dict__)
         
@@ -134,14 +134,14 @@ class ParaxialGaussianAnalytic(AnalyticField):
     def get_rotation(self):
         # Define rotation transforming (0,0,1) -> (kx,ky,kz) for vectors
         # and (1,0,0) -> e(beta) = e1*cos(beta) + e2*sin(beta)
-        # self.rotation = Rotation.from_euler('ZYZ', (self.phi,self.theta,self.beta))
-        # self.rotation_m = self.rotation.as_matrix()
-        # # Inverse rotation: (kx,ky,kz) -> (0,0,1)
-        # self.rotation_bwd = self.rotation.inv()
-        # self.rotation_bwd_m = self.rotation_bwd.as_matrix()
+        self.rotation = Rotation.from_euler('ZYZ', (self.phi,self.theta,self.beta))
+        self.rotation_m = self.rotation.as_matrix()
+        # Inverse rotation: (kx,ky,kz) -> (0,0,1)
+        self.rotation_bwd = self.rotation.inv()
+        self.rotation_bwd_m = self.rotation_bwd.as_matrix()
 
-        self.rotation_m = EulerMatrix(self.phi,self.theta,self.beta)
-        self.rotation_bwd_m = EulerMatrix(-self.beta,-self.theta,-self.phi)
+        # self.rotation_m = EulerMatrix(self.phi,self.theta,self.beta)
+        # self.rotation_bwd_m = EulerMatrix(-self.beta,-self.theta,-self.phi)
 
 
     def rotate_coordinates(self):
