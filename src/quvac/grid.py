@@ -169,9 +169,11 @@ def create_dynamic_grid(fields_params, grid_params):
     # Number of spatial pts 
     box_size = np.array(box_xyz) / 2
     Nxyz_ = get_xyz_size(fields_params, box_size)
-    if isinstance(grid_params['spatial_resolution'], Iterable):
-        Nxyz = [Nx * res for Nx,res in zip(Nxyz_, grid_params['spatial_resolution'])]
-    elif type()
+    res = grid_params['spatial_resolution']
+    if isinstance(res, Iterable):
+        Nxyz = [Nx * res for Nx,res in zip(Nxyz_, res)]
+    elif type(res) in (int, float):
+        Nxyz = [Nx * res for Nx in Nxyz_]
     grid_params['Nxyz'] = Nxyz
 
     # Create temporal box
