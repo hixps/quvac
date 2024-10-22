@@ -29,7 +29,10 @@ def _create_grids(variables):
 
 def create_parameter_grids(variables):
     '''
-    Create a grid from (start, end , npts) specified for each parameter
+    Create a grid from (start, end, npts) specified for each parameter.
+    Dictionary key 'fields' is handled separately because it's a 3-level dict
+    (fields: key_1: key_2: value) while other parameters are 2-level dicts 
+    (key_1: key_2: value)
     '''
     variables_grid = {}
     fields = variables.get('fields', {})
@@ -43,6 +46,10 @@ def create_parameter_grids(variables):
 
 
 def restructure_variables_grid(variables):
+    '''
+    Transform nested dict into plane dict by combining nested
+    dict keys
+    '''
     variables_grid = {}
     for key,val in variables['fields'].items():
         variables[key] = val
@@ -61,6 +68,10 @@ def restructure_variables_grid(variables):
 
 def create_ini_files_for_gridscan(ini_default, param_names,
                                   param_grids, save_path):
+    '''
+    Creates separate ini.yml file for every combination of params
+    in gridscan
+    '''
     ini_files = []
     for parametrization in itertools.product(*param_grids):
         ini_current = deepcopy(ini_default)
