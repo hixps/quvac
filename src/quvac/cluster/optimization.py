@@ -172,7 +172,6 @@ def cluster_optimization(ini_file, optimization_file, save_path=None, wisdom_fil
     sbatch_params = cluster_params.get('sbatch_params', DEFAULT_SUBMITIT_PARAMS)
     max_parallel_jobs = cluster_params.get('max_parallel_jobs', 3)
     log_folder = os.path.join(save_path, 'submitit_logs')
-    print(max_parallel_jobs)
 
     executor = AutoExecutor(folder=log_folder, cluster=cluster)
     if cluster == 'slurm':
