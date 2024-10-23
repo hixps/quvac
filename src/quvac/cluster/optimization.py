@@ -54,7 +54,8 @@ def quvac_evaluation(params):
     # Update_parameters for current trial
     for param_key,param in params.items():
         category,key = param_key.split(':')
-        ini_data['fields'][category][key] = float(param * scales.get(key, 1))
+        scale = scales.get(key, 1)
+        ini_data['fields'][category][key] = float(param * scale)
     
     # Save ini file
     ini_path = os.path.join(save_path, 'ini.yml')
