@@ -115,6 +115,22 @@ class GaussianAnalytic(ExplicitField):
             self.__dict__[ax] = ne.evaluate("mx*(x_-x0) + my*(y_-y0) + mz*(z_-z0)",
                                             global_dict=self.__dict__)
             
+    def define_ho_variables(self):
+        '''
+        We follow the article: Salamin, Yousef I. "Fields of a Gaussian beam 
+        beyond the paraxial approximation." Applied Physics B 86 (2007): 319-326.
+        '''
+        self.eps = self.w0 / self.zR
+        self.xi = ne.evaluate('x/w0', global_dict=self.__dict__)
+        self.nu = ne.evaluate('y/w0', global_dict=self.__dict__)
+        self.zeta = ne.evaluate('z/zR', global_dict=self.__dict__)
+        self.rho = ne.evaluate('xi**2 + nu**2', global_dict=self.__dict__)
+        self.f = ne.evaluate('exp(1j*arctan(zeta))/sqrt(1 + zeta**2)',
+                              global_dict=self.__dict__)
+        
+
+
+            
     def check_energy(self):
         E, B = self.calculate_field(t=0)
         W = get_field_energy(E, B, self.dV)
