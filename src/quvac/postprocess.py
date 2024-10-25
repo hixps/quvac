@@ -116,7 +116,7 @@ class VacuumEmissionAnalyzer:
 
         self.save_path = save_path
 
-    def get_total_signal_spectrum(self):
+    def get_total_signal(self):
         self.S = ne.evaluate("S1.real**2 + S1.imag**2 + S2.real**2 + S2.imag**2",
                              global_dict=self.__dict__)
         self.N_xyz = np.fft.fftshift(self.S / (2*pi)**3)
@@ -124,19 +124,50 @@ class VacuumEmissionAnalyzer:
         self.N_tot = ne.evaluate("sum(N_xyz)",
                            global_dict=self.__dict__)
         self.N_tot *= self.dVk
+
+    def get_polarization_from_field(self):
+        field = MaxwellMultiple(self.fields_params, self.grid_xyz)
+        a1, a2 = field.a1, field.a2
+        Ex = ne.evaluate('e1x*a1 + e2x*a2', global_dict=self.__dict__)
+        Ey = ne.evaluate('e1y*a1 + e2y*a2', global_dict=self.__dict__)
+        Ez = ne.evaluate('e1z*a1 + e2z*a2', global_dict=self.__dict__)
+        E = ne.evaluate('sqrt(Ex**2 + Ey**2 + Ez**2)')
+        efx, efy, efz = Ex / E, Ey / E, Ez / E
+        return (efx, efy, efz)
     
-    def get_pol_signal_spectrum(self, angles):
+    def _get_polarization_vector(self, angles, perp_type='optical axis'):
+        if perp_type == 'optical axis':
+            self.epx, self.epy, self.epz = get_polarization_vector(*angles)
+        elif perp_type == 'local axis':
+            beta = angles[-1]
+            efx, efy, efz = self.get_polarization_from_field()
+            kx, ky, kz = [k/self.kabs for k in self.kmeshgrid]
+            kx[0,0,0] = 0.
+            ky[0,0,0] = 0.
+            kz[0,0,0] = 0.
+            self.epx = ne.evaluate('ky*efz - kz*efy')
+            self.epy = ne.evaluate('kz*efx - kx*efz')
+            self.epz = ne.evaluate('kx*efy - ky*efx')
+        return (self.epx, self.epy, self.epz)
+
+    def get_perp_signal(self, angles, perp_type='optical axis'):
         '''
         angles (theta, phi, beta): (float, float, float)
             Euler angles for field polarization (in degrees)
         '''
         angles = [angle*pi/180 for angle in angles]
-        self.ep = epx, epy, epz = get_polarization_vector(*angles)
+        # Here we make sure that perp polarization would be calculated
+        angles[-1] += pi/2
+
+        # get one polarization direction to project on:
+        self.ep = self._get_polarization_vector(angles, perp_type)
+        
+        # Calculate perp signal
         ep_e1 = "(epx*e1x + epy*e1y + epz*e1z)"
         ep_e2 = "(epx*e2x + epy*e2y + epz*e2z)"
-        self.Sp = ne.evaluate(f"({ep_e1}*S1 + {ep_e2}*S2)", global_dict=self.__dict__)
-        self.Sp = ne.evaluate('Sp.real**2 + Sp.imag**2', global_dict=self.__dict__)
-        self.Np_xyz = np.fft.fftshift(self.Sp / (2*pi)**3)
+        Sp = ne.evaluate(f"({ep_e1}*S1 + {ep_e2}*S2)", global_dict=self.__dict__)
+        Sp = ne.evaluate('Sp.real**2 + Sp.imag**2', global_dict=self.__dict__)
+        self.Np_xyz = np.fft.fftshift(Sp / (2*pi)**3)
 
         self.Np_tot = ne.evaluate("sum(Np_xyz)",
                                   global_dict=self.__dict__)
@@ -202,7 +233,6 @@ class VacuumEmissionAnalyzer:
         # Integrate over discernible regions
         self.N_disc = integrate_spherical(self.N_sph * self.discernible, self.spherical_grid)
 
-    
     def write_data(self):
         data = {
             'kx': self.kx,
@@ -210,10 +240,13 @@ class VacuumEmissionAnalyzer:
             'kz': self.kz,
             'N_xyz': self.N_xyz,
             'N_total': self.N_tot,
-            'ep': self.ep,
-            'Np_xyz': self.Np_xyz,
-            'Np_total': self.Np_tot
         }
+        if 'Np_tot' in self.__dict__:
+            data.update({
+                'ep': self.ep,
+                'Np_xyz': self.Np_xyz,
+                'Np_total': self.Np_tot
+            })
         if 'N_sph' in self.__dict__:
             data.update({
                 'k': self.k,
@@ -234,12 +267,15 @@ class VacuumEmissionAnalyzer:
             })
         np.savez(self.save_path, **data)
     
-    def get_spectra(self, angles=None, calculate_spherical=False,
+    def get_spectra(self, perp_field_idx=1, perp_type=None, calculate_spherical=False,
                     calculate_discernible=False):
-        self.get_total_signal_spectrum()
+        self.get_total_signal()
 
-        angles = (0.,0.,0.) if angles is None else angles
-        self.get_pol_signal_spectrum(angles)
+        if perp_type:
+            angle_keys = 'theta phi beta'.split()
+            angles = [self.fields_params[perp_field_idx-1][key]
+                      for key in angle_keys]
+            self.get_perp_signal(angles, perp_type=perp_type)
 
         if calculate_spherical:
             self.get_signal_on_sph_grid()
