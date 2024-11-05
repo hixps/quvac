@@ -66,7 +66,7 @@ class GaussianAnalytic(ExplicitField):
         if 'E0' not in field_params:
             assert 'W' in field_params, """Field params need to have either 
                                            W (energy) or E0 (amplitude) as key"""
-            self.E0 = 1.
+            self.E0 = 1.e10
 
         # Define grid variables
         self.grid = grid
@@ -198,8 +198,6 @@ class GaussianAnalytic(ExplicitField):
 
         Et = ne.evaluate(f"E * exp(-(2.*psi_plane/(omega*tau))**2) * exp(-1.j*{self.phase})",
                         global_dict=self.__dict__)
-        # if mode == 'real':
-        #     Et = Et.real
         
         if self.order > 0:
             self.Ex = ne.evaluate('1j*Et * Ex_ho', global_dict=self.__dict__)
@@ -215,14 +213,7 @@ class GaussianAnalytic(ExplicitField):
         if mode == 'real':
             for field in 'Ex Ey Ez By Bz'.split():
                 self.__dict__[field] = np.real(self.__dict__[field])
-        #     Ex = ne.evaluate(f"E * exp(-(psi_plane/omega)**2/(tau/2.)**2) * sin({self.phase})",
-        #                     global_dict=self.__dict__)
-        # else:
-        #     Ex = ne.evaluate(f"E * 1.j*exp(-(2.*psi_plane/(omega*tau))**2) * exp(-1.j*{self.phase})",
-        #                     global_dict=self.__dict__)
-        # Ey, Ez = 0., 0.
-        # By = Ex.copy()
-        # Bx, Bz = 0., 0.
+
         dtype = np.float64 if mode == 'real' else np.complex128
         if E_out is None:
             E_out = [np.zeros(self.grid_shape, dtype=dtype) for _ in range(3)]
