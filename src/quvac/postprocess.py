@@ -268,7 +268,7 @@ class VacuumEmissionAnalyzer:
         np.savez(self.save_path, **data)
     
     def get_spectra(self, perp_field_idx=1, perp_type=None, calculate_spherical=False,
-                    calculate_discernible=False):
+                    spherical_params=None, calculate_discernible=False):
         self.get_total_signal()
 
         if perp_type:
@@ -278,7 +278,7 @@ class VacuumEmissionAnalyzer:
             self.get_perp_signal(angles, perp_type=perp_type)
 
         if calculate_spherical:
-            self.get_signal_on_sph_grid()
+            self.get_signal_on_sph_grid(**spherical_params)
         if calculate_discernible:
             self.get_discernible_signal()
         

@@ -183,7 +183,6 @@ class GaussianAnalytic(ExplicitField):
     def check_energy(self):
         E, B = self.calculate_field(t=0)
         W = get_field_energy(E, B, self.dV)
-        print(f'Energy: {W}')
 
         if 'W' in self.__dict__.keys() and not np.isclose(W, self.W, rtol=1e-5):
             self.E0 *= np.sqrt(self.W/W)
