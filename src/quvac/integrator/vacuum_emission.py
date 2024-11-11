@@ -28,12 +28,13 @@ class VacuumEmission(object):
     field: quvac.Field
         External fields
     '''
-    def __init__(self, field, grid, nthreads=None):
+    def __init__(self, field, grid, nthreads=None, channels=False):
         self.field = field
         self.grid = grid
         self.grid.get_k_grid()
         # Update local dict with variables from GridXYZ class
         self.__dict__.update(self.grid.__dict__)
+        self.channels = channels
 
         self.omega = self.kabs*c
 
@@ -46,19 +47,38 @@ class VacuumEmission(object):
         # Define symbolic expressions to evaluate later
         self.F_expr = "0.5 * (Bx**2 + By**2 + Bz**2 - Ex**2 - Ey**2 - Ez**2)"
         self.G_expr = "-(Ex*Bx + Ey*By + Ez*Bz)"
-        self.U1 = [f"(4.*E{ax}*F + 7.*B{ax}*G)" for ax in "xyz"]
-        self.U2 = [f"(4.*B{ax}*F - 7.*E{ax}*G)" for ax in "xyz"]
 
         self.F, self.G = [np.zeros(self.grid_shape) for _ in range(2)]
+
+        if not self.channels:
+            self.U1 = [f"(4.*E{ax}*F + 7.*B{ax}*G)" for ax in "xyz"]
+            self.U2 = [f"(4.*B{ax}*F - 7.*E{ax}*G)" for ax in "xyz"]
+        else:
+            self.define_channel_variables()
 
         self.I_ij = {f"{i}{j}": f"(e{i}x*U{j}_acc_x + e{i}y*U{j}_acc_y + e{i}z*U{j}_acc_z)"
                      for i in range(1,3) for j in range(1,3)}
         for key,val in self.I_ij.items():
             self.__dict__[f"I_{key}_expr"] = val
-    
+
+    def define_channel_variables(self):
+        self.F_B_Bp_expr = "(Bx*Bpx + By*Bpy + Bz*Bpz - Ex*Epx - Ey*Epy - Ez*Epz)"
+        self.G_Ep_B_expr = "-(Epx*Bx + Epy*By + Epz*Bz)"
+        self.G_E_Bp_expr = "-(Ex*Bpx + Ey*Bpy + Ez*Bpz)"
+
+        self.F_B_Bp, self.G_Ep_B, self.G_E_Bp = [np.zeros(self.grid_shape) for _ in range(3)]
+
+        self.U1 = [f"(4*(Ep{ax}*F + E{ax}*F_B_Bp) + 7*(Bp{ax}*G + B{ax}*(G_Ep_B + G_E_Bp)))"
+                   for ax in "xyz"]
+        self.U2 = [f"(4*(Bp{ax}*F + B{ax}*F_B_Bp) - 7*(Ep{ax}*G + E{ax}*(G_Ep_B + G_E_Bp)))"
+                   for ax in "xyz"]
+
     def allocate_fields(self):
         self.E_out = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
         self.B_out = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
+        if self.channels:
+            self.E_probe = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
+            self.B_probe = [np.zeros(self.grid_shape, dtype=np.complex128) for _ in range(3)]
 
     def allocate_result_arrays(self):
         self.U1_acc = [np.zeros(self.grid_shape, dtype='complex128') for _ in range(3)]
@@ -82,11 +102,24 @@ class VacuumEmission(object):
     def calculate_one_time_step(self, t, weight=1):
         # Calculate fields
         self.allocate_fields()
-        self.field.calculate_field(t, E_out=self.E_out, B_out=self.B_out)
+
+        if not self.channels:
+            self.field.calculate_field(t, E_out=self.E_out, B_out=self.B_out)
+        else:
+            self.field.calculate_field(t, E_probe=self.E_probe, B_probe=self.B_probe,
+                                       E_pump=self.E_out, B_pump=self.B_out)
+            Epx, Epy, Epz = [E.real for E in self.E_probe]
+            Bpx, Bpy, Bpz = [B.real for B in self.B_probe]
+        
         Ex, Ey, Ez = [E.real for E in self.E_out]
         Bx, By, Bz = [B.real for B in self.B_out]
         ne.evaluate(self.F_expr, out=self.F)
         ne.evaluate(self.G_expr, out=self.G)
+
+        if self.channels:
+            ne.evaluate(self.F_B_Bp_expr, out=self.F_B_Bp)
+            ne.evaluate(self.G_Ep_B_expr, out=self.G_Ep_B)
+            ne.evaluate(self.G_E_Bp_expr, out=self.G_E_Bp)
         
         # Evaluate U1 and U2 expressions
         ax = 'xyz'
@@ -138,11 +171,3 @@ class VacuumEmission(object):
                 'S1': self.S1,
                 'S2': self.S2}
         np.savez(save_path, **data)
-
-
-        
-        
-
-
-
-
