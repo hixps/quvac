@@ -2,7 +2,7 @@
 This script provides basic linear Maxwell propagation class
 and a particular implementation of GaussianMaxwell
 '''
-import os
+import logging
 
 import numpy as np
 import numexpr as ne
@@ -16,6 +16,9 @@ from quvac.field.gaussian import GaussianAnalytic
 SPATIAL_MODEL_FIELDS = {
     'paraxial_gaussian_maxwell': GaussianAnalytic,
 }
+
+
+logger = logging.getLogger('simulation')
 
 
 class MaxwellField(Field):
@@ -83,8 +86,9 @@ class MaxwellMultiple(MaxwellField):
 
         self.a1, self.a2 = [pyfftw.zeros_aligned(self.grid_shape,  dtype='complex128')
                             for _ in range(2)]
-        fields = [fields] if isinstance(fields, dict) else fields
-        for field in fields:
+        self.fields = [fields] if isinstance(fields, dict) else fields
+        for i,field in enumerate(self.fields):
+            logger.info(f'Setting up field {i+1}:')
             a1, a2 = self.get_a12_from_field(field)
             self.a1 += a1
             self.a2 += a2
@@ -96,6 +100,7 @@ class MaxwellMultiple(MaxwellField):
         field_type = field_params['field_type']
         if field_type in SPATIAL_MODEL_FIELDS:
             cls = SPATIAL_MODEL_FIELDS[field_type]
+            logger.info(f'    {field_type}: {cls.__name__}')
             ini_field = cls(field_params, self.grid_xyz)
             self.t0 = ini_field.t0
             a1, a2 = ini_field.get_a12(ini_field.t0)

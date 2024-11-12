@@ -11,18 +11,20 @@ from pathlib import Path
 import time
 import resource
 
-import numpy as np
 import numexpr as ne
 import pyfftw
 
+from quvac.log import (simulation_start_str, simulation_end_str,
+                       get_grid_params, get_performance_stats,
+                       get_postprocess_info)
 from quvac.field.external_field import ExternalField, ProbePumpField
 from quvac.integrator.vacuum_emission import VacuumEmission
 from quvac.grid import setup_grids
 from quvac.postprocess import VacuumEmissionAnalyzer
-from quvac.utils import (read_yaml, write_yaml, format_memory, format_time,
-                         load_wisdom, save_wisdom)
+from quvac.utils import read_yaml, load_wisdom, save_wisdom
 
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger('simulation')
 
 # ini yaml structure
 '''
@@ -50,50 +52,6 @@ grids (one of two modes):
 performance:
     nthreads: ...
 '''
-
-# timings structure
-performance_str = '''
-Timings:
-=================================================
-Field setup:               {:>15s}
-Vacem setup:               {:>15s}
-Amplitudes calculation:    {:>15s}
-Postprocess:               {:>15s}
--------------------------------------------------
-Per iteration:             {:>15s}  
--------------------------------------------------
-Total:                     {:>15s}
-=================================================
-
-Memory (max usage):
-=================================================
-Amplitudes calculation:    {:>15s}
-Total:                     {:>15s}
-=================================================
-'''
-
-
-def get_performance_stats(perf_stats):
-    timings = perf_stats['timings']
-    timings = {
-        'field_setup': timings['field_setup']-timings['start'],
-        'vacem_setup': timings['vacem_setup']-timings['field_setup'],
-        'amplitudes': timings['amplitudes']-timings['vacem_setup'],
-        'postprocess': timings['postprocess']-timings['amplitudes'],
-        'per_iteration': timings['per_iteration'],
-        'total': timings['postprocess']-timings['start'],
-    }
-    timings = {k: format_time(t) for k,t in timings.items()}
-    memory = {k: format_memory(m) for k,m in perf_stats['memory'].items()}
-    perf_print = performance_str.format(timings['field_setup'],
-                                        timings['vacem_setup'],
-                                        timings['amplitudes'],
-                                        timings['postprocess'],
-                                        timings['per_iteration'],
-                                        timings['total'],
-                                        memory['maxrss_amplitudes'],
-                                        memory['maxrss_total'])
-    return perf_print 
 
 
 def parse_args():
@@ -130,8 +88,13 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
     
     # Setup logger
     logger_file = os.path.join(save_path, 'simulation.log')
-    logging.basicConfig(filename=logger_file, encoding='utf-8', level=logging.DEBUG,
-                        format=f'%(asctime)s %(message)s')
+    logging.basicConfig(filename=logger_file, filemode='w', encoding='utf-8',
+                        level=logging.DEBUG, format=f'%(message)s')
+    
+    # Start time
+    time_log_start = time.asctime(time.localtime())
+    start_print = simulation_start_str.format(time_log_start)
+    logger.info(start_print)
 
     # Load and parse ini yaml file
     ini_config = read_yaml(ini_file)
@@ -168,9 +131,13 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
     # Get grids
     grid_xyz, grid_t = setup_grids(fields_params, grid_params)
     grid_xyz.get_k_grid()
-    logger.info("Grids are created")
+    grid_print = get_grid_params(grid_xyz, grid_t)
+    logger.info(grid_print)
+    logger.info("MILESTONE: Grids are created\n")
 
     # Field setup
+    logger.info('Field constructor:\n'
+    '====================================================')
     time_start = time.perf_counter()
     if not channels:
         field = ExternalField(fields_params, grid_xyz, nthreads=nthreads)
@@ -178,19 +145,30 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
         field = ProbePumpField(fields_params, grid_xyz, probe_pump_idx=probe_pump_idx,
                                nthreads=nthreads)
     time_field_setup = time.perf_counter()
-    logger.info("Fields are set up")
+    logger.info('====================================================\n')
+    logger.info("MILESTONE: Fields are set up")
 
     # Calculate amplitudes
+    if not channels:
+        log_message = 'Calculating vacuum emission amplitude with external field...'
+    else:
+        probe_pump = field.probe_pump_idx
+        log_message = ('Calculating vacuum emission amplitude for probe channel...\n'
+                       f'    Probe idx: {probe_pump['probe']}\n'
+                       f'    Pump  idx: {probe_pump['pump']}')
+    logger.info(log_message)
     vacem = VacuumEmission(field, grid_xyz, nthreads, channels=channels)
     time_vacem_setup = time.perf_counter()
     vacem.calculate_amplitudes(grid_t, save_path=amplitudes_file)
     time_amplitudes = time.perf_counter()
     maxrss_amplitudes = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    logger.info("Amplitudes are calculated")
+    logger.info('MILESTONE: Amplitudes are calculated')
 
     del field, vacem
 
     # Calculate spectra
+    postprocess_print = get_postprocess_info(postprocess_params)
+    logger.info(postprocess_print)
     analyzer = VacuumEmissionAnalyzer(fields_params, data_path=amplitudes_file,
                                       save_path=spectra_file)
     analyzer.get_spectra(perp_field_idx=perp_field_idx,
@@ -199,7 +177,7 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
                          spherical_params=spherical_params,
                          calculate_discernible=calculate_discernible)
     time_postprocess = time.perf_counter()
-    logger.info("Spectra calculated from amplitudes")
+    logger.info('MILESTONE: Spectra are calculated from amplitudes')
 
     # Save gained wisdom (for fftw)
     save_wisdom(ini_file, wisdom_file)
@@ -232,6 +210,11 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
     logger.info(perf_print)
 
     print("Simulation finished!")
+
+    # End time
+    time_log_end = time.asctime(time.localtime())
+    end_print = simulation_end_str.format(time_log_end)
+    logger.info(end_print)
 
 
 if __name__ == '__main__':
