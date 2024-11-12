@@ -4,6 +4,7 @@ Here we provide analyzer classes that calculate from amplitudes:
     - Polarization sensitive signal
     - Discernible signal
 '''
+import logging
 import warnings
 
 import numpy as np
@@ -12,8 +13,12 @@ from scipy.constants import pi, c, hbar, epsilon_0
 from scipy.interpolate import RegularGridInterpolator
 from scipy.integrate import trapezoid
 
+from quvac.log import sph_interp_warn
 from quvac.grid import GridXYZ, get_pol_basis
 from quvac.field.maxwell import MaxwellMultiple
+
+
+logger = logging.getLogger('simulation')
 
 
 def get_polarization_vector(theta, phi, beta):
@@ -191,10 +196,11 @@ class VacuumEmissionAnalyzer:
                 self.__dict__[sph_total_key] = N_total
 
                 if not np.isclose(self.__dict__[total_key], N_total, rtol=1e-2):
-                    warnings.warn(f"""{total_key} signal on cartesian and spherical 
-                                  grid differ by more than 1%:
-                                  N total (xyz): {self.__dict__[total_key]:.3f}
-                                  N total (sph): {N_total:.3f}""")
+                    warn_message = sph_interp_warn.format(total_key,
+                                                          self.__dict__[total_key],
+                                                          N_total)
+                    warnings.warn(warn_message)
+                    logger.warning(warn_message)
 
         self.spherical_grid = self.k, self.theta, self.phi = spherical_grid
 

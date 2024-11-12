@@ -3,12 +3,16 @@ This script provides uniform ExternalField class to unite all
 participating fields in one interface
 '''
 import os
+import logging
 
 import numpy as np
 
 from quvac.field.abc import Field
 from quvac.field.gaussian import GaussianAnalytic
 from quvac.field.maxwell import MaxwellMultiple
+
+
+logger = logging.getLogger('simulation')
 
 
 class ExternalField(Field):
@@ -36,8 +40,13 @@ class ExternalField(Field):
         if maxwell_params:
             new_params.append(maxwell_params)
 
+        # if len(maxwell_params) == len(fields_params):
+        #     header = f'{self.__class__.__name__} -> {MaxwellMultiple.__name__}'
+        logger.info(f'{self.__class__.__name__}\n'
+                    '----------------------------------------------------')
         for field_params in new_params:
             self.setup_field(field_params)
+        logger.info('----------------------------------------------------')
 
     def setup_field(self, field_params):
         if isinstance(field_params, list):
@@ -53,6 +62,7 @@ class ExternalField(Field):
             case _:
                 raise NotImplementedError(f"We do not support '{field_type}' field type")
         self.fields.append(field)
+        logger.info(f'Base class: {field.__class__.__name__}')
             
     def calculate_field(self, t, E_out=None, B_out=None):
         for field in self.fields:
@@ -77,6 +87,7 @@ class ProbePumpField(Field):
                 'probe': [0],
                 'pump': [1]
             }
+        self.probe_pump_idx = probe_pump_idx
 
         self.nthreads = nthreads if nthreads else os.cpu_count()
 

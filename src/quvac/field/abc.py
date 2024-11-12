@@ -4,12 +4,16 @@ classes
 '''
 
 from abc import ABC, abstractmethod
+import logging
 
 import numpy as np
 import numexpr as ne
 import pyfftw
 
 from quvac.field.utils import get_field_energy_kspace
+
+
+logger = logging.getLogger('simulation')
 
 
 class Field(ABC):
@@ -66,10 +70,16 @@ class ExplicitField(Field):
                               global_dict=self.__dict__)
 
         # Fix energy
-        W_upd = get_field_energy_kspace(self.a1, self.a2, self.kabs, self.dVk, mode='without 1/k')
+        W_upd = get_field_energy_kspace(self.a1, self.a2, self.kabs, self.dVk,
+                                        mode='without 1/k')
+        logger.info(f'    Energy after projection in k-space: {W_upd:.3f} J')
 
         self.a1 *= np.sqrt(self.W/W_upd)
         self.a2 *= np.sqrt(self.W/W_upd)
+
+        W_corrected = get_field_energy_kspace(self.a1, self.a2, self.kabs, self.dVk, 
+                                        mode='without 1/k')
+        logger.info(f'    Energy after "correction":          {W_corrected:.3f} J')
 
         del self.Ef, self.Ef_fftw, self.Efx, self.Efy, self.Efz
 
