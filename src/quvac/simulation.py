@@ -142,7 +142,7 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
     logger.info(grid_print)
     logger.info("MILESTONE: Grids are created\n")
 
-    # Shortet time grid for the test run
+    # Shorten time grid for the test run
     if test_run:
         expected_timesteps = len(grid_t)
         grid_t = grid_t[:test_timesteps]
