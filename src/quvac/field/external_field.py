@@ -40,8 +40,6 @@ class ExternalField(Field):
         if maxwell_params:
             new_params.append(maxwell_params)
 
-        # if len(maxwell_params) == len(fields_params):
-        #     header = f'{self.__class__.__name__} -> {MaxwellMultiple.__name__}'
         logger.info(f'{self.__class__.__name__}\n'
                     '----------------------------------------------------')
         for field_params in new_params:

@@ -35,13 +35,8 @@ class VacuumEmission(object):
         self.__dict__.update(self.grid_xyz.__dict__)
         self.channels = channels
 
-        self.omega = self.kabs*c
-
+        self.c = c
         self.nthreads = nthreads if nthreads else os.cpu_count()
-
-        self.exp_shift_fft = sum([kx*x.flatten()[0] for kx,x in zip(self.kmeshgrid, self.xyz)])
-        self.exp_shift_fft = ne.evaluate('exp(-1j*exp_shift_fft)', 
-                                           global_dict=self.__dict__)
 
         # Define symbolic expressions to evaluate later
         self.F_expr = "0.5 * (Bx**2 + By**2 + Bz**2 - Ex**2 - Ey**2 - Ez**2)"
@@ -127,7 +122,7 @@ class VacuumEmission(object):
                 ne.evaluate(expr, global_dict=self.__dict__, out=self.tmp[i])
                 self.tmp_fftw[i].execute()
                 U = self.tmp[i]
-                ne.evaluate(f"U{idx+1}_acc_{ax[i]} + U*exp(1j*omega*t)*dt*weight*dV",
+                ne.evaluate(f"U{idx+1}_acc_{ax[i]} + U*exp(1j*kabs*c*t)*dt*weight*dV",
                             global_dict=self.__dict__, out=self.__dict__[f"U{idx+1}_acc_{ax[i]}"])
 
     def calculate_time_integral(self, t_grid, integration_method="trapezoid"):
