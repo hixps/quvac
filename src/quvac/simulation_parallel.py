@@ -113,6 +113,7 @@ def quvac_simulation_parallel(ini_file, save_path=None, wisdom_file='wisdom/fftw
         Path(save_path).mkdir(parents=True, exist_ok=True)
     amplitudes_file = os.path.join(save_path, 'amplitudes.npz')
     spectra_file = os.path.join(save_path, 'spectra.npz')
+    performance_file = os.path.join(save_path, 'performance.yml')
     
     # Setup logger
     logger_file = os.path.join(save_path, 'simulation.log')
@@ -197,6 +198,7 @@ def quvac_simulation_parallel(ini_file, save_path=None, wisdom_file='wisdom/fftw
         'start': time_start,
         'jobs': time_jobs_finished,
         'postprocess': time_postprocess,
+        'total': time_postprocess-time_start,
     }
 
     maxrss_total = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
@@ -210,6 +212,8 @@ def quvac_simulation_parallel(ini_file, save_path=None, wisdom_file='wisdom/fftw
         'timings': timings,
         'memory': memory
     }
+
+    write_yaml(performance_file, perf_stats)
 
     perf_print = get_parallel_performance_stats(perf_stats)
     print(perf_print)

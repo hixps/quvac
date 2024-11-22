@@ -21,7 +21,7 @@ from quvac.field.external_field import ExternalField, ProbePumpField
 from quvac.integrator.vacuum_emission import VacuumEmission
 from quvac.grid import setup_grids
 from quvac.postprocess import VacuumEmissionAnalyzer
-from quvac.utils import read_yaml, load_wisdom, save_wisdom, format_time
+from quvac.utils import read_yaml, write_yaml, load_wisdom, save_wisdom, format_time
 
 
 logger = logging.getLogger('simulation')
@@ -85,6 +85,7 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
         Path(save_path).mkdir(parents=True, exist_ok=True)
     amplitudes_file = os.path.join(save_path, 'amplitudes.npz')
     spectra_file = os.path.join(save_path, 'spectra.npz')
+    performance_file = os.path.join(save_path, 'performance.yml')
     
     # Setup logger
     logger_file = os.path.join(save_path, 'simulation.log')
@@ -205,7 +206,8 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
         'vacem_setup': time_vacem_setup,
         'amplitudes': time_amplitudes,
         'postprocess': time_postprocess,
-        'per_iteration': time_per_iteration
+        'per_iteration': time_per_iteration,
+        'total': time_postprocess-time_start,
     }
 
     maxrss_total = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
@@ -219,6 +221,8 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file='wisdom/fftw-wisdom')
         'timings': timings,
         'memory': memory
     }
+
+    write_yaml(performance_file, perf_stats)
 
     perf_print = get_performance_stats(perf_stats)
     print(perf_print)
