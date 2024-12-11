@@ -13,7 +13,7 @@ from scipy.constants import c
 
 from quvac.cluster.optimization import gather_trials_data
 from quvac.utils import read_yaml, write_yaml
-from test_config import DEFAULT_CONFIG_PATH, OPTIMIZATION_SCRIPT
+from config_for_tests import DEFAULT_CONFIG_PATH, OPTIMIZATION_SCRIPT
 
 
 @pytest.mark.slow

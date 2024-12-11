@@ -17,7 +17,7 @@ import pytest
 
 from quvac.analytic_scalings import get_two_paraxial_scaling
 from quvac.utils import read_yaml, write_yaml
-from test_config import DEFAULT_CONFIG_PATH, SIMULATION_SCRIPT
+from config_for_tests import DEFAULT_CONFIG_PATH, SIMULATION_SCRIPT
 
 
 def run_test_simulation(path, ini_data):

@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from quvac.utils import read_yaml, write_yaml
-from test_config import DEFAULT_CONFIG_PATH, SIMULATION_SCRIPT
+from config_for_tests import DEFAULT_CONFIG_PATH, SIMULATION_SCRIPT
 
 REFERENCE_PATH = "tests/references"
 REFERENCE_FILE = "results.yml"
