@@ -83,6 +83,7 @@ def get_filenames(ini_file, save_path, wisdom_file):
     ini_config = read_yaml(ini_file)
     mode = ini_config.get('mode', 'simulation_postprocess')
     files = {}
+    files['save_path'] = save_path
     files['ini'] = ini_file
     files['wisdom'] = wisdom_file
     files['amplitudes'] = os.path.join(save_path, "amplitudes.npz")
@@ -264,7 +265,8 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file="wisdom/fftw-wisdom")
         fields_params = list(fields_params.values())
 
     if do_simulation:
-        timings, memory = run_simulation(ini_config, fields_params, files, timings, memory)
+        timings, memory = run_simulation(ini_config, fields_params, 
+                                         files, timings, memory)
     # Calculate spectra
     if do_postprocess:
         postprocess_simulation(ini_config, files, fields_params)

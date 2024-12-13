@@ -7,7 +7,6 @@ do postprocessing and measure performance
 import argparse
 import logging
 import os
-import resource
 import time
 from copy import deepcopy
 from pathlib import Path
@@ -20,8 +19,8 @@ from quvac.grid import setup_grids
 from quvac.log import (get_parallel_performance_stats, get_postprocess_info,
                        simulation_end_str, simulation_start_str)
 from quvac.postprocess import VacuumEmissionAnalyzer
-from quvac.simulation import quvac_simulation
-from quvac.utils import read_yaml, write_yaml
+from quvac.simulation import get_dirs, quvac_simulation, postprocess_simulation
+from quvac.utils import read_yaml, write_yaml, get_maxrss
 
 logger = logging.getLogger("simulation")
 
@@ -31,6 +30,7 @@ def create_ini_files_for_parallel(ini_config, grid_xyz, grid_t, n_jobs, save_pat
     Nt_per_job = Nt_total // n_jobs
 
     ini_job = deepcopy(ini_config)
+    ini_job["mode"] = "simulation"
     ini_job["postprocess"] = {}
 
     box_xyz = [float(-ax[0] * 2) for ax in grid_xyz.grid]
@@ -100,19 +100,18 @@ def quvac_simulation_parallel(
     Then we gather all S1 and S2 in the main process and do main postprocessing.
     """
     # Check that ini file and save_path exists
-    assert os.path.isfile(ini_file), f"{ini_file} is not a file or does not exist"
-    if save_path is None:
-        save_path = os.path.dirname(ini_file)
-    if not os.path.exists(save_path):
-        Path(save_path).mkdir(parents=True, exist_ok=True)
-    amplitudes_file = os.path.join(save_path, "amplitudes.npz")
-    spectra_file = os.path.join(save_path, "spectra.npz")
-    performance_file = os.path.join(save_path, "performance.yml")
+    files = get_dirs(ini_file, save_path, wisdom_file)
+
+    # Load and parse ini yaml file
+    ini_config = read_yaml(ini_file)
+    # One can choose either to perform just simulation, just postprocess or both
+    mode = ini_config.get('mode', 'simulation_postprocess')
+    do_simulation = 'simulation' in mode
+    do_postprocess = 'postprocess' in mode
 
     # Setup logger
-    logger_file = os.path.join(save_path, "simulation.log")
     logging.basicConfig(
-        filename=logger_file,
+        filename=files['logger'],
         filemode="w",
         encoding="utf-8",
         level=logging.DEBUG,
@@ -123,24 +122,15 @@ def quvac_simulation_parallel(
     time_log_start = time.asctime(time.localtime())
     start_print = simulation_start_str.format(time_log_start)
     logger.info(start_print)
+    timings = {}
+    timings['start'] = time.perf_counter()
 
     # Load and parse ini yaml file
-    ini_config = read_yaml(ini_file)
     fields_params = ini_config["fields"]
     if isinstance(fields_params, dict):
         fields_params = list(fields_params.values())
     grid_params = ini_config["grid"]
     cluster_params = ini_config.get("cluster_params", {})
-
-    # Determine postprocess steps
-    postprocess_params = ini_config.get("postprocess", {})
-    do_postprocess = True if postprocess_params else False
-    if do_postprocess:
-        calculate_spherical = postprocess_params.get("calculate_spherical", False)
-        spherical_params = postprocess_params.get("spherical_params", {})
-        calculate_discernible = postprocess_params.get("calculate_discernible", False)
-        perp_type = postprocess_params.get("perp_polarization_type", None)
-        perp_field_idx = postprocess_params.get("perp_field_idx", 1)
 
     # Get parallelization params
     n_jobs = cluster_params.get("n_jobs", 2)
@@ -152,12 +142,11 @@ def quvac_simulation_parallel(
     grid_xyz, grid_t = setup_grids(fields_params, grid_params)
 
     ini_files = create_ini_files_for_parallel(
-        ini_config, grid_xyz, grid_t, n_jobs, save_path
+        ini_config, grid_xyz, grid_t, n_jobs, files['save_path']
     )
 
-    time_start = time.perf_counter()
     # Create a cluster
-    submitit_folder = os.path.join(save_path, "submitit_logs")
+    submitit_folder = os.path.join(files['save_path'], "submitit_logs")
     executor = submitit.AutoExecutor(folder=submitit_folder, cluster=cluster)
     if cluster == "slurm":
         executor.update_parameters(slurm_array_parallelism=max_jobs)
@@ -173,43 +162,25 @@ def quvac_simulation_parallel(
     logger.info("MILESTONE: Jobs are finished")
 
     # Collect all results
-    collect_results(ini_files, amplitudes_file)
+    collect_results(ini_files, files['amplitudes'])
     logger.info("MILESTONE: Results from individual jobs are collected")
-    time_jobs_finished = time.perf_counter()
+    timings['jobs'] = time.perf_counter()
 
-    maxrss_jobs = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    maxrss_jobs = get_maxrss()
 
     # Calculate spectra
     if do_postprocess:
-        postprocess_print = get_postprocess_info(postprocess_params)
-        logger.info(postprocess_print)
-        analyzer = VacuumEmissionAnalyzer(
-            fields_params, data_path=amplitudes_file, save_path=spectra_file
-        )
-        analyzer.get_spectra(
-            perp_field_idx=perp_field_idx,
-            perp_type=perp_type,
-            calculate_spherical=calculate_spherical,
-            spherical_params=spherical_params,
-            calculate_discernible=calculate_discernible,
-        )
-        logger.info("MILESTONE: Spectra are calculated from amplitudes")
-    time_postprocess = time.perf_counter()
+        postprocess_simulation(ini_config, files, fields_params)
 
-    timings = {
-        "start": time_start,
-        "jobs": time_jobs_finished,
-        "postprocess": time_postprocess,
-        "total": time_postprocess - time_start,
-    }
+    timings['postprocess'] = time.perf_counter()
+    timings['total'] = timings['postprocess'] - timings['start']
 
-    maxrss_total = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    maxrss_total = get_maxrss()
 
     memory = {"maxrss_jobs": maxrss_jobs, "maxrss_total": maxrss_total}
-
     perf_stats = {"timings": timings, "memory": memory}
 
-    write_yaml(performance_file, perf_stats)
+    write_yaml(files['performance'], perf_stats)
 
     perf_print = get_parallel_performance_stats(perf_stats)
     print(perf_print)
