@@ -124,10 +124,10 @@ def run_simulation(ini_config, fields_params, files, timings, memory):
     ne.set_num_threads(nthreads)
     pyfftw_threads = perf_params.get("pyfftw_threads", nthreads)
     # Set up global precision for calculations
-    precision = perf_params.get("precision", "float64")
-    set_precision(precision)
+    # precision = perf_params.get("precision", "float64")
+    # set_precision(precision)
     use_wisdom = perf_params.get("use_wisdom", True)
-    logger.info(f"Using {precision} precision")
+    # logger.info(f"Using {precision} precision")
 
     perf_params = ini_config.get("performance", {})
 
@@ -259,6 +259,12 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file="wisdom/fftw-wisdom")
     timings = {}
     timings['start'] = time.perf_counter()
     memory = {'maxrss_amplitudes': 0}
+
+    # Set up global precision for calculations
+    perf_params = ini_config.get("performance", {})
+    precision = perf_params.get("precision", "float64")
+    set_precision(precision)
+    logger.info(f"Using {precision} precision")
 
     fields_params = ini_config["fields"]
     if isinstance(fields_params, dict):
