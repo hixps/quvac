@@ -24,7 +24,7 @@ logger = logging.getLogger("simulation")
 
 def get_polarization_vector(theta, phi, beta):
     e1, e2 = get_pol_basis(theta, phi)
-    ep = e1 * np.cos(beta) + e2 * np.sin(beta)
+    ep = e1 * np.cos(beta, dtype=config.FDTYPE) + e2 * np.sin(beta, dtype=config.FDTYPE)
     return ep
 
 
