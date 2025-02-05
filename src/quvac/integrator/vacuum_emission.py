@@ -175,17 +175,18 @@ class VacuumEmission(object):
                 ne.evaluate(expr, global_dict=self.U_dict, out=self.tmp[i])
                 self.tmp_fftw[i].execute()
 
-                U_res = ne.evaluate(
-                    f"U_acc + U*prefactor*dt*dV",
-                    global_dict={
-                        "U_acc": U_acc,
-                        "U": self.tmp[i],
-                        "prefactor": self.prefactor,
-                        "dt": self.dt,
-                        "dV": self.dV,
-                    },
-                )
-                U_acc[:] = U_res.astype(config.CDTYPE)
+                # U_res = ne.evaluate(
+                #     f"U_acc + U*prefactor*dt*dV",
+                #     global_dict={
+                #         "U_acc": U_acc,
+                #         "U": self.tmp[i],
+                #         "prefactor": self.prefactor,
+                #         "dt": self.dt,
+                #         "dV": self.dV,
+                #     },
+                # )
+                # U_acc[:] = U_res.astype(config.CDTYPE)
+                U_acc += self.tmp[i]*self.prefactor*self.dt*self.dV
 
     def calculate_time_integral(self, t_grid, integration_method="trapezoid"):
         self.dt = t_grid[1] - t_grid[0]
