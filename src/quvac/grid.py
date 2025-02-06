@@ -113,6 +113,8 @@ def get_kmax_grid(field_params):
         w0 = field_params["w0"]
     elif "w0x" in field_params:
         w0 = min(field_params["w0x"], field_params["w0y"])
+    else:
+        w0 = c*tau
 
     k = 2 * np.pi / lam
     theta *= pi / 180
