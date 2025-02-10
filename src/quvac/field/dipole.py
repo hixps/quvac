@@ -92,7 +92,7 @@ class DipoleAnalytic(ExplicitField):
             self.gdotdot_expr = (f'-1j*exp(-(t/{a})**2 - 1j*omega*t) * (4*t**2/{a}**4 '
                                  f'- 2/{a}**2 - omega**2 + 4j*t*omega/{a}**2)')
             self.E_R0 = (f"-1j*exp(-(t/{a})**2 - 1j*omega*t) * (-2*t/{a}**2*(4*t**2/{a}**4 - "
-                         f"3*omega**2 - 6/{a}**2)*sin(omega*t) + omega*(12*t**2/{a}**4 - "
+                         f"3*omega**2 - 6/{a}**2)*sin(omega*t) - 1j*omega*(12*t**2/{a}**4 - "
                          f"omega**2 - 6/{a}**2)*cos(omega*t))")
             
         self.check_energy()
