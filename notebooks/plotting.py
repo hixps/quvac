@@ -46,7 +46,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
     n_rows = len(plot_keys)
     n_cols = 2
 
-    fig = plt.figure(figsize=(10, 5*n_rows), layout="tight")
+    fig = plt.figure(figsize=(10, 5*n_rows), layout="constrained")
     for i,key in enumerate(plot_keys):
         if key == "I":
             cmap = "inferno"
@@ -67,12 +67,13 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
                 plt.ylabel("x [$\\mu$m]")
             plt.title(f"{key} at focal plane")
 
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            cbar = plt.colorbar(im, cax=cax)
+            plt.colorbar(im, shrink=0.6)
+            # divider = make_axes_locatable(ax)
+            # cax = divider.append_axes("right", size="5%", pad=0.05)
+            # cbar = plt.colorbar(im, cax=cax)
 
             ax.set_aspect('equal')
-    plt.subplots_adjust(wspace=0.1)
+    # plt.subplots_adjust(wspace=0.1)
     save_fig(save_path, "field_profiles_focus")
     plt.show()
 
