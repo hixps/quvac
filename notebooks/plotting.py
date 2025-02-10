@@ -19,7 +19,7 @@ def save_fig(save_path, fig_name):
         plt.savefig(f"{name}.pdf", bbox_inches='tight')
 
 
-def plot_fields(field, t, plot_keys=None, cmap='RdBu',
+def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
                 save_path=None):
     """
     Plot specified field components
@@ -39,13 +39,16 @@ def plot_fields(field, t, plot_keys=None, cmap='RdBu',
         "I": I,
     }
 
-    # 1st plot: xy and xz profiles at focus for given components
     plot_keys = plot_keys if plot_keys is not None else field_comps.keys()
+    # 1st plot: xy and xz profiles at focus for given components
     n_rows = len(plot_keys)
     n_cols = 2
 
     fig = plt.figure(figsize=(10, 5*n_rows), layout="constrained")
     for i,key in enumerate(plot_keys):
+        if key == "I":
+            cmap = "inferno"
+
         plt.subplot(n_rows, n_cols, i*n_cols+1)
         plt.pcolormesh(y, x, field_comps[key][:, :, nz//2], shading=None,
                        rasterized=True, cmap=cmap)
@@ -60,5 +63,27 @@ def plot_fields(field, t, plot_keys=None, cmap='RdBu',
         plt.ylabel("x [$\\mu$m]")
         plt.title(f"{key} at z=0")
     save_fig(save_path, "field_profiles_focus")
+    plt.show()
+
+    # 2nd plot: x, y, z slices through focus for given components
+    n_rows = len(plot_keys)
+    n_cols = 3
+    axs = [x, y, z]
+    axs_names = ["x", "y", "z"]
+
+    fig = plt.figure(figsize=(15, 5*n_rows), layout="constrained")
+    for i,key in enumerate(plot_keys):
+        comp = field_comps[key]
+        slices = [comp[:, ny//2, nz//2],
+                  comp[nx//2, :, nz//2],
+                  comp[nx//2, ny//2, :]]
+        for j,slc in enumerate(slices):
+            plt.subplot(n_rows, n_cols, i*n_cols+j+1)
+            plt.plot(axs_names[j], slc)
+            plt.yscale("log")
+            plt.xlabel(f"{axs[j]} [$\\mu$m]")
+            plt.ylabel(key)
+            plt.title(f"{axs[j]} slice")
+    save_fig(save_path, "field_slices_focus")
     plt.show()
 
