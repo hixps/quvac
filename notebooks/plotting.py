@@ -52,6 +52,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
         plt.subplot(n_rows, n_cols, i*n_cols+1)
         plt.pcolormesh(y, x, field_comps[key][:, :, nz//2], shading=None,
                        rasterized=True, cmap=cmap)
+        plt.colorbar()
         plt.xlabel("y [$\\mu$m]")
         plt.ylabel("x [$\\mu$m]")
         plt.title(f"{key} at z=0")
@@ -59,6 +60,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
         plt.subplot(n_rows, n_cols, i*n_cols+2)
         plt.pcolormesh(z, x, field_comps[key][:, ny//2, :], shading=None,
                        rasterized=True, cmap=cmap)
+        plt.colorbar()
         plt.xlabel("z [$\\mu$m]")
         plt.ylabel("x [$\\mu$m]")
         plt.title(f"{key} at z=0")
@@ -79,11 +81,11 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
                   comp[nx//2, ny//2, :]]
         for j,slc in enumerate(slices):
             plt.subplot(n_rows, n_cols, i*n_cols+j+1)
-            plt.plot(axs_names[j], slc)
+            plt.plot(axs[j], slc)
             plt.yscale("log")
-            plt.xlabel(f"{axs[j]} [$\\mu$m]")
+            plt.xlabel(f"{axs_names[j]} [$\\mu$m]")
             plt.ylabel(key)
-            plt.title(f"{axs[j]} slice")
+            plt.title(f"{axs_names[j]} slice")
     save_fig(save_path, "field_slices_focus")
     plt.show()
 
