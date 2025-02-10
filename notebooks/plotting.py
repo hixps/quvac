@@ -49,18 +49,20 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
         if key == "I":
             cmap = "inferno"
 
-        plt.subplot(n_rows, n_cols, i*n_cols+1)
+        ax = plt.subplot(n_rows, n_cols, i*n_cols+1)
         plt.pcolormesh(y, x, field_comps[key][:, :, nz//2], shading=None,
                        rasterized=True, cmap=cmap)
         plt.colorbar()
+        ax.set_aspect('equal')
         plt.xlabel("y [$\\mu$m]")
         plt.ylabel("x [$\\mu$m]")
         plt.title(f"{key} at z=0")
 
-        plt.subplot(n_rows, n_cols, i*n_cols+2)
+        ax = plt.subplot(n_rows, n_cols, i*n_cols+2)
         plt.pcolormesh(z, x, field_comps[key][:, ny//2, :], shading=None,
                        rasterized=True, cmap=cmap)
         plt.colorbar()
+        ax.set_aspect('equal')
         plt.xlabel("z [$\\mu$m]")
         plt.ylabel("x [$\\mu$m]")
         plt.title(f"{key} at z=0")
@@ -84,7 +86,8 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
             plt.plot(axs[j], slc)
             plt.yscale("log")
             plt.xlabel(f"{axs_names[j]} [$\\mu$m]")
-            plt.ylabel(key)
+            if j == 0:
+                plt.ylabel(key)
             plt.title(f"{axs_names[j]} slice")
     save_fig(save_path, "field_slices_focus")
     plt.show()
