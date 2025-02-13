@@ -354,7 +354,7 @@ def get_simulation_fields(ini_file):
     grid_xyz.get_k_grid()
 
     fields = []
-    for field_params in fields_params:
+    for field_params in fields_params.values():
         field = ExternalField([field_params], grid_xyz)
         fields.append(field)
     return fields
