@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.constants import c, pi
 
 
@@ -19,6 +18,36 @@ def save_fig(save_path, fig_name):
         name = os.path.join(save_path, fig_name)
         plt.savefig(f"{name}.png", bbox_inches='tight')
         plt.savefig(f"{name}.pdf", bbox_inches='tight')
+
+
+def pi_formatter(x, pos):
+    fractions = {0: "0", np.pi/4: r"$\frac{\pi}{4}$", 
+                 np.pi/2: r"$\frac{\pi}{2}$", 3*np.pi/4: r"$\frac{3\pi}{4}$",
+                 np.pi: r"$\pi$", 5*np.pi/4: r"$\frac{5*\pi}{4}$",
+                 3*np.pi/2: r"$\frac{3\pi}{2}$", 7*np.pi/8: r"$\frac{7\pi}{8}$",
+                 2*np.pi: r"$2\pi$"}
+    return fractions.get(x, f"${x/np.pi:.2g}\\pi$")
+
+
+def plot_mollweide(fig, ax, phi, theta, data, cmap='coolwarm', scale=None, norm=None):
+    theta_ = theta - np.pi/2
+    phi_ = phi - np.pi
+    phi_mesh, theta_mesh = np.meshgrid(phi_, theta_)
+    
+    im = ax.pcolormesh(phi_mesh, theta_mesh, data, cmap=cmap,
+                       shading='gouraud', rasterized=True, norm=norm)
+    fig.colorbar(im, ax=ax, shrink=0.5)
+
+    ax.set_xticks([-2, -1, 0, 1, 2])
+    ax.set_yticks([-1.5, -1, -0.5, 0, 0.5, 1, 1.5])
+    xtick_labels = np.linspace(60, 360, 5, endpoint=False, dtype=int)
+    ax.xaxis.set_ticklabels(r'$%s^{\circ}$' %num for num in xtick_labels)
+    ytick_labels = np.linspace(0, 180, 7, endpoint=True, dtype=int)
+    ax.yaxis.set_ticklabels(r'$%s^{\circ}$' %num for num in ytick_labels)
+    for item in ax.xaxis.get_ticklabels() + ax.yaxis.get_ticklabels():
+        item.set_fontsize(18)
+    ax.grid()
+    return ax
 
 
 def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
