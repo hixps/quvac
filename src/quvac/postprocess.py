@@ -150,8 +150,9 @@ class VacuumEmissionAnalyzer:
         Ex = ne.evaluate("e1x*a1 + e2x*a2", global_dict=self.__dict__)
         Ey = ne.evaluate("e1y*a1 + e2y*a2", global_dict=self.__dict__)
         Ez = ne.evaluate("e1z*a1 + e2z*a2", global_dict=self.__dict__)
-        E = ne.evaluate("sqrt(Ex**2 + Ey**2 + Ez**2)")
-        efx, efy, efz = Ex / E, Ey / E, Ez / E
+        E = ne.evaluate("sqrt(Ex**2 + Ey**2 + Ez**2)") 
+        E_inv = np.nan_to_num(1. / E)
+        efx, efy, efz = Ex * E_inv, Ey * E_inv, Ez * E_inv
         return (efx, efy, efz)
 
     def _get_polarization_vector(self, angles, perp_type="optical axis"):
