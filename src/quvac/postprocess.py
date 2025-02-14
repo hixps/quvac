@@ -143,7 +143,9 @@ class VacuumEmissionAnalyzer:
         self.N_total = np.sum(self.N_xyz) * self.dVk
 
     def get_polarization_from_field(self):
-        field = MaxwellMultiple(self.fields_params, self.grid_xyz)
+        perp_field_params = self.fields_params[self.perp_field_idx]
+        field = MaxwellMultiple([perp_field_params], self.grid_xyz)
+        # field = MaxwellMultiple(self.fields_params, self.grid_xyz)
         a1, a2 = field.a1, field.a2
         Ex = ne.evaluate("e1x*a1 + e2x*a2", global_dict=self.__dict__)
         Ey = ne.evaluate("e1y*a1 + e2y*a2", global_dict=self.__dict__)
@@ -306,8 +308,9 @@ class VacuumEmissionAnalyzer:
         calculate_spherical=False,
         spherical_params=None,
     ):
+        self.perp_field_idx = perp_field_idx - 1
         angle_keys = "theta phi beta".split()
-        angles = [self.fields_params[perp_field_idx - 1][key] for key in angle_keys]
+        angles = [self.fields_params[self.perp_field_idx][key] for key in angle_keys]
         self.get_perp_signal(angles, perp_type=perp_type)
         keys = "kx ky kz Np_xyz Np_total".split()
 
