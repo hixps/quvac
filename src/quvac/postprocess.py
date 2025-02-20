@@ -342,13 +342,13 @@ class VacuumEmissionAnalyzer:
         self.get_total_signal()
         keys = "kx ky kz N_xyz N_total".split()
 
+        if calculate_spherical:
+            self.get_signal_on_sph_grid(key="N_xyz", **spherical_params)
+            keys.extend("k theta phi N_sph N_sph_total".split())
         if calculate_xyz_background:
             self.get_background_xyz()
             self.background = self.get_background(discernibility=None, bgr_idx=bgr_idx)
             keys.extend("background_xyz background".split())
-        if calculate_spherical:
-            self.get_signal_on_sph_grid(key="N_xyz", **spherical_params)
-            keys.extend("k theta phi N_sph N_sph_total".split())
         if calculate_discernible:
             self.get_discernible_signal(discernibility)
             keys.extend("background discernible N_disc".split())
