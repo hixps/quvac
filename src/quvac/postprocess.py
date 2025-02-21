@@ -269,7 +269,8 @@ class VacuumEmissionAnalyzer:
                                      for P in (P1,P2,P3)]
 
     def get_signal_on_sph_grid(
-        self, key="N_xyz", spherical_grid=None, angular_resolution=None, **interp_kwargs
+        self, key="N_xyz", spherical_grid=None, angular_resolution=None,
+        check_total=False, **interp_kwargs
     ):
         arr = getattr(self, key)
         spherical_grid, N_sph = cartesian_to_spherical_array(
@@ -279,20 +280,25 @@ class VacuumEmissionAnalyzer:
             angular_resolution=angular_resolution,
             **interp_kwargs,
         )
-        sph_key = key.replace("xyz", "sph")
+        if "xyz" in key:
+            sph_key = key.replace("xyz", "sph")
+            total_key = key.replace("xyz", "total")
+        else:
+            sph_key = key + '_sph'
+            total_key = key + "_total"
         sph_total_key = f"{sph_key}_total"
-        total_key = key.replace("xyz", "total")
         self.__dict__[sph_key] = N_sph
 
-        N_total = integrate_spherical(N_sph, spherical_grid)
-        self.__dict__[sph_total_key] = N_total
+        if check_total:
+            N_total = integrate_spherical(N_sph, spherical_grid)
+            self.__dict__[sph_total_key] = N_total
 
-        if not np.isclose(self.__dict__[total_key], N_total, rtol=1e-2):
-            warn_message = sph_interp_warn.format(
-                total_key, self.__dict__[total_key], N_total
-            )
-            warnings.warn(warn_message)
-            logger.warning(warn_message)
+            if not np.isclose(self.__dict__[total_key], N_total, rtol=1e-2):
+                warn_message = sph_interp_warn.format(
+                    total_key, self.__dict__[total_key], N_total
+                )
+                warnings.warn(warn_message)
+                logger.warning(warn_message)
 
         self.spherical_grid = self.k, self.theta, self.phi = spherical_grid
 
@@ -380,7 +386,7 @@ class VacuumEmissionAnalyzer:
         keys = "kx ky kz N_xyz N_total".split()
 
         if calculate_spherical:
-            self.get_signal_on_sph_grid(key="N_xyz", **spherical_params)
+            self.get_signal_on_sph_grid(key="N_xyz", check_total=True, **spherical_params)
             keys.extend("k theta phi N_sph N_sph_total".split())
         if calculate_xyz_background:
             self.get_background_xyz()
@@ -410,7 +416,8 @@ class VacuumEmissionAnalyzer:
         if not stokes:
             keys.extend("Np_xyz Np_total".split())
             if calculate_spherical:
-                self.get_signal_on_sph_grid(key="Np_xyz", **spherical_params)
+                self.get_signal_on_sph_grid(key="Np_xyz", check_total=True,
+                                             **spherical_params)
                 keys.extend("k theta phi Np_sph Np_sph_total".split())
         else:
             stokes_keys = "P1 P2 P3".split()
@@ -418,7 +425,8 @@ class VacuumEmissionAnalyzer:
             if calculate_spherical:
                 keys.extend("k theta phi".split())
                 for stokes_key in stokes_keys:
-                    self.get_signal_on_sph_grid(key=stokes_key, **spherical_params)
+                    self.get_signal_on_sph_grid(key=stokes_key, check_total=False,
+                                                **spherical_params)
                     keys.extend([f"{stokes_key}_sph"])
         
         self.write_data(keys)
