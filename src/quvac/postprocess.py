@@ -122,13 +122,16 @@ def get_simulation_fields(ini_file):
     return fields
 
 
-def get_a12_from_amplitudes(S1, S2, k):
+def transform_S12_to_a12(S1, S2, k, transform="forward"):
     '''
     Given complex signal amplitudes S1 and S2, calculate
     spectral coefficients a1 and a2 (similar to Maxwell fields)
     k = kabs
+    backwars transform corresponds to a12 -> S12
     '''
     prefactor = np.sqrt(2*hbar*k/(epsilon_0*c))
+    if transform == "backward":
+        prefactor = np.nan_to_num(1 / prefactor)
     a1 = S1 * prefactor
     a2 = S2 * prefactor
     return a1, a2
@@ -359,7 +362,7 @@ class VacuumEmissionAnalyzer:
         )
     
     def get_signal_a12(self, add_signal_bg=False):
-        self.a1_sig, self.a2_sig = get_a12_from_amplitudes(self.S1, self.S2, self.kabs)
+        self.a1_sig, self.a2_sig = transform_S12_to_a12(self.S1, self.S2, self.kabs)
         if add_signal_bg:
             bgr_field = MaxwellMultiple(self.fields_params, self.grid_xyz)
             a1_bgr, a2_bgr = bgr_field.a1, bgr_field.a2
