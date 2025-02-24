@@ -262,7 +262,7 @@ def get_box_size(fields_params, grid_params):
         if "gauss" in ftype:
             length = field.get("w0", 0)
         elif "dipole" in ftype:
-            length = c * field.get("tau", 0)
+            length = c * field.get("tau", 0) / 4
         perp_max = np.maximum(length, perp_max)
     
     # perp_max = max([field.get("w0", 0) for field in fields_params])
