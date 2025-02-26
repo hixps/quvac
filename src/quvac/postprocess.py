@@ -107,6 +107,49 @@ def integrate_spherical(arr, axs, axs_names=["k", "theta", "phi"],
     return integrand
 
 
+def get_simulation_fields(ini_file):
+    ini = read_yaml(ini_file)
+    fields_params = ini["fields"]
+    grid_params = ini["grid"]
+
+    grid_xyz, grid_t = setup_grids(fields_params, grid_params)
+    grid_xyz.get_k_grid()
+
+    fields = []
+    for field_params in fields_params.values():
+        field = ExternalField([field_params], grid_xyz)
+        fields.append(field)
+    return fields
+
+
+def transform_S12_to_a12(S1, S2, k, transform="forward"):
+    '''
+    Given complex signal amplitudes S1 and S2, calculate
+    spectral coefficients a1 and a2 (similar to Maxwell fields)
+    k = kabs
+    backwars transform corresponds to a12 -> S12
+    '''
+    prefactor = np.sqrt(2*hbar*k/(epsilon_0*c))
+    if transform == "backward":
+        prefactor = np.where(prefactor != 0, 1 / prefactor, 0.)
+    a1 = S1 * prefactor
+    a2 = S2 * prefactor
+    return a1, a2
+
+
+def get_spectra_from_Stokes(P0, P1, P2, P3, basis="linear"):
+    match basis:
+        case "linear":
+            P = P1
+        case "linear-45":
+            P = P2
+        case "circular":
+            P = P3
+    Nf = 0.5 * (P0 + P)
+    Np = 0.5 * (P0 - P)
+    return Nf, Np
+
+
 class VacuumEmissionAnalyzer:
     """
     Calculates spectra and observables from amplitudes
@@ -145,7 +188,6 @@ class VacuumEmissionAnalyzer:
     def get_polarization_from_field(self):
         perp_field_params = self.fields_params[self.perp_field_idx]
         field = MaxwellMultiple([perp_field_params], self.grid_xyz)
-        # field = MaxwellMultiple(self.fields_params, self.grid_xyz)
         a1, a2 = field.a1, field.a2
         Ex = ne.evaluate("e1x*a1 + e2x*a2", global_dict=self.__dict__)
         Ey = ne.evaluate("e1y*a1 + e2y*a2", global_dict=self.__dict__)
@@ -157,10 +199,18 @@ class VacuumEmissionAnalyzer:
         return (efx, efy, efz)
 
     def _get_polarization_vector(self, angles, perp_type="optical axis"):
+        '''
+        Calculate polarization vectors parallel to chosen axis and perp to it
+        ef - field polarization (parallel)
+        ep - perp polarization
+        '''
         if perp_type == "optical axis":
+            self.efx, self.efy, self.efz = get_polarization_vector(*angles)
+            angles[-1] += pi / 2
             self.epx, self.epy, self.epz = get_polarization_vector(*angles)
         elif perp_type == "local axis":
             efx, efy, efz = self.get_polarization_from_field()
+            self.efx, self.efy, self.efz = efx, efy, efz
             kx, ky, kz = [k / self.kabs for k in self.kmeshgrid]
             kx[0, 0, 0] = 0.0
             ky[0, 0, 0] = 0.0
@@ -168,33 +218,62 @@ class VacuumEmissionAnalyzer:
             self.epx = ne.evaluate("ky*efz - kz*efy")
             self.epy = ne.evaluate("kz*efx - kx*efz")
             self.epz = ne.evaluate("kx*efy - ky*efx")
-        return (self.epx, self.epy, self.epz)
+        return (self.efx, self.efy, self.efz), (self.epx, self.epy, self.epz)
 
-    def get_perp_signal(self, angles, perp_type="optical axis"):
+    def get_perp_signal(self, angles, perp_type="optical axis",
+                        stokes=False):
         """
         angles (theta, phi, beta): (float, float, float)
             Euler angles for field polarization (in degrees)
         """
         angles = [angle * pi / 180 for angle in angles]
         # Here we make sure that perp polarization would be calculated
-        angles[-1] += pi / 2
 
         # get one polarization direction to project on:
-        self.ep = self._get_polarization_vector(angles, perp_type)
+        self.ef, self.ep = self._get_polarization_vector(angles, perp_type)
         epx, epy, epz = self.ep
         e1x, e1y, e1z = self.e1x, self.e1y, self.e1z
         e2x, e2y, e2z = self.e2x, self.e2y, self.e2z
 
-        # Calculate perp signal
+        # Calculate perp signal or stokes parameters
+        if stokes:
+            self.get_Stokes_vector_for_ep()
+        else:
+            Sp = (epx*e1x + epy*e1y + epz*e1z)*self.S1 + (epx*e2x + epy*e2y + epz*e2z)*self.S2
+            Sp = Sp.real**2 + Sp.imag**2
+
+            self.Np_xyz = np.fft.fftshift(Sp / (2 * pi) ** 3)
+            self.Np_total = np.sum(self.Np_xyz) * self.dVk
+
+    def get_Stokes_vector_for_ep(self):
+        '''
+        Given amplitudes S1,S2 for arbitrary linear polarization
+        basis e1,e2, calculate Stokes vectors for detector ep
+
+        For given ef (||) and ep (perp):
+        P0 = N_xyz = (S_||)**2 + (S_perp)**2
+        P1 = (S_||)**2 - (S_perp)**2
+        P2 = (S_45)**2 - (S_-45)**2     - difference of linear polarizations in 45 basis
+        P3 = (S_right)**2 - (S_left)**2 - difference of circular polarizations
+        '''
+        e1x, e1y, e1z = self.e1x, self.e1y, self.e1z
+        e2x, e2y, e2z = self.e2x, self.e2y, self.e2z
+        efx, efy, efz = self.ef
+        epx, epy, epz = self.ep
+
+        Sf = (efx*e1x + efy*e1y + efz*e1z)*self.S1 + (efx*e2x + efy*e2y + efz*e2z)*self.S2
         Sp = (epx*e1x + epy*e1y + epz*e1z)*self.S1 + (epx*e2x + epy*e2y + epz*e2z)*self.S2
-        Sp = Sp.real**2 + Sp.imag**2
 
-        self.Np_xyz = np.fft.fftshift(Sp / (2 * pi) ** 3)
+        P1 = Sf.real**2 + Sf.imag**2 - (Sp.real**2 + Sp.imag**2)
+        P2 = 2 * np.real(Sf * np.conj(Sp))
+        P3 = -2 * np.imag(Sf * np.conj(Sp))
 
-        self.Np_total = np.sum(self.Np_xyz) * self.dVk
+        self.P1, self.P2, self.P3 = [np.fft.fftshift(P / (2 * pi) ** 3)
+                                     for P in (P1,P2,P3)]
 
     def get_signal_on_sph_grid(
-        self, key="N_xyz", spherical_grid=None, angular_resolution=None, **interp_kwargs
+        self, key="N_xyz", spherical_grid=None, angular_resolution=None,
+        check_total=False, **interp_kwargs
     ):
         arr = getattr(self, key)
         spherical_grid, N_sph = cartesian_to_spherical_array(
@@ -204,20 +283,25 @@ class VacuumEmissionAnalyzer:
             angular_resolution=angular_resolution,
             **interp_kwargs,
         )
-        sph_key = key.replace("xyz", "sph")
+        if "xyz" in key:
+            sph_key = key.replace("xyz", "sph")
+            total_key = key.replace("xyz", "total")
+        else:
+            sph_key = key + '_sph'
+            total_key = key + "_total"
         sph_total_key = f"{sph_key}_total"
-        total_key = key.replace("xyz", "total")
         self.__dict__[sph_key] = N_sph
 
-        N_total = integrate_spherical(N_sph, spherical_grid)
-        self.__dict__[sph_total_key] = N_total
+        if check_total:
+            N_total = integrate_spherical(N_sph, spherical_grid)
+            self.__dict__[sph_total_key] = N_total
 
-        if not np.isclose(self.__dict__[total_key], N_total, rtol=1e-2):
-            warn_message = sph_interp_warn.format(
-                total_key, self.__dict__[total_key], N_total
-            )
-            warnings.warn(warn_message)
-            logger.warning(warn_message)
+            if not np.isclose(self.__dict__[total_key], N_total, rtol=1e-2):
+                warn_message = sph_interp_warn.format(
+                    total_key, self.__dict__[total_key], N_total
+                )
+                warnings.warn(warn_message)
+                logger.warning(warn_message)
 
         self.spherical_grid = self.k, self.theta, self.phi = spherical_grid
 
@@ -230,24 +314,25 @@ class VacuumEmissionAnalyzer:
         N_xyz[0, 0, 0] = 0.0
         return np.fft.fftshift(N_xyz)
     
-    def get_background_xyz(self, add_to_cls_dict=True):
-        bgr_field = MaxwellMultiple(self.fields_params, self.grid_xyz)
+    def get_background_xyz(self, add_to_cls_dict=True, bgr_idx=None):
+        if bgr_idx is not None:
+            bgr_field = MaxwellMultiple(self.fields_params[bgr_idx], self.grid_xyz)
+        else:
+            bgr_field = MaxwellMultiple(self.fields_params, self.grid_xyz)
         bgr_N_xyz = self.get_photon_spectrum_from_a12(bgr_field.a1, bgr_field.a2)
         if add_to_cls_dict:
             self.background_xyz = bgr_N_xyz
         return bgr_N_xyz
 
-    def get_background(self, discernibility="angular", **interp_kwargs):
-        # bgr_field = MaxwellMultiple(self.fields_params, self.grid_xyz)
-        # bgr_N_xyz = self.get_photon_spectrum_from_a12(bgr_field.a1, bgr_field.a2)
-        # del bgr_field
-        bgr_N_xyz = self.get_background_xyz(add_to_cls_dict=False)
+    def get_background(self, discernibility="angular", bgr_idx=None,
+                       **interp_kwargs):
+        bgr_N_xyz = self.get_background_xyz(add_to_cls_dict=False, bgr_idx=bgr_idx)
 
         # Interpolate on spherical grid
         _, bgr_N_sph = cartesian_to_spherical_array(
             bgr_N_xyz,
             self.grid_xyz,
-            spherical_grid=self.spherical_grid,
+            spherical_grid=self.__dict__.get('spherical_grid', None),
             **interp_kwargs,
         )
 
@@ -275,6 +360,17 @@ class VacuumEmissionAnalyzer:
         self.N_disc = integrate_spherical(
             self.N_sph * self.discernible, self.spherical_grid
         )
+    
+    def get_signal_a12(self, add_signal_bg=False):
+        self.a1_sig, self.a2_sig = transform_S12_to_a12(self.S1, self.S2, self.kabs)
+        if add_signal_bg:
+            bgr_field = MaxwellMultiple(self.fields_params, self.grid_xyz)
+            a1_bgr, a2_bgr = bgr_field.a1, bgr_field.a2
+            self.a1_mix, self.a2_mix = self.a1_sig + a1_bgr, self.a2_sig + a2_bgr
+        self.a1_sig, self.a2_sig = [np.fft.fftshift(a) for a 
+                                    in (self.a1_sig,self.a2_sig)]
+        self.a1_mix, self.a2_mix = [np.fft.fftshift(a) for a 
+                                    in (self.a1_mix,self.a2_mix)]
 
     def write_data(self, keys):
         data = {key: getattr(self, key) for key in keys}
@@ -283,20 +379,22 @@ class VacuumEmissionAnalyzer:
     def get_total_spectra(
         self,
         calculate_xyz_background=False,
+        bgr_idx=None,
         calculate_spherical=False,
         spherical_params=None,
         calculate_discernible=False,
-        discernibility="angular"
+        discernibility="angular",
     ):
         self.get_total_signal()
         keys = "kx ky kz N_xyz N_total".split()
 
+        if calculate_spherical:
+            self.get_signal_on_sph_grid(key="N_xyz", check_total=True, **spherical_params)
+            keys.extend("k theta phi N_sph N_sph_total".split())
         if calculate_xyz_background:
             self.get_background_xyz()
-            keys.extend(["background_xyz"])
-        if calculate_spherical:
-            self.get_signal_on_sph_grid(key="N_xyz", **spherical_params)
-            keys.extend("k theta phi N_sph N_sph_total".split())
+            self.background = self.get_background(discernibility=None, bgr_idx=bgr_idx)
+            keys.extend("background_xyz background".split())
         if calculate_discernible:
             self.get_discernible_signal(discernibility)
             keys.extend("background discernible N_disc".split())
@@ -309,17 +407,39 @@ class VacuumEmissionAnalyzer:
         perp_type=None,
         calculate_spherical=False,
         spherical_params=None,
+        stokes=False,
     ):
         self.perp_field_idx = perp_field_idx - 1
         angle_keys = "theta phi beta".split()
         angles = [self.fields_params[self.perp_field_idx][key] for key in angle_keys]
-        self.get_perp_signal(angles, perp_type=perp_type)
-        keys = "kx ky kz Np_xyz Np_total epx epy epz".split()
+        self.get_perp_signal(angles, perp_type=perp_type, stokes=stokes)
+        # keys = "kx ky kz Np_xyz Np_total epx epy epz".split()
+        keys = "kx ky kz epx epy epz efx efy efz".split()
 
-        if calculate_spherical:
-            self.get_signal_on_sph_grid(key="Np_xyz", **spherical_params)
-            keys.extend("k theta phi Np_sph Np_sph_total".split())
+        if not stokes:
+            keys.extend("Np_xyz Np_total".split())
+            if calculate_spherical:
+                self.get_signal_on_sph_grid(key="Np_xyz", check_total=True,
+                                             **spherical_params)
+                keys.extend("k theta phi Np_sph Np_sph_total".split())
+        else:
+            stokes_keys = "P1 P2 P3".split()
+            keys.extend(stokes_keys)
+            if calculate_spherical:
+                keys.extend("k theta phi".split())
+                for stokes_key in stokes_keys:
+                    self.get_signal_on_sph_grid(key=stokes_key, check_total=False,
+                                                **spherical_params)
+                    keys.extend([f"{stokes_key}_sph"])
         
+        self.write_data(keys)
+
+    def get_mix_signal_bg(self, add_signal_bg=False):
+        self.get_signal_a12(add_signal_bg)
+
+        keys = "a1_sig a2_sig".split()
+        if add_signal_bg:
+            keys.extend("a1_mix a2_mix".split())
         self.write_data(keys)
 
     def get_spectra(
@@ -328,14 +448,18 @@ class VacuumEmissionAnalyzer:
         perp_field_idx=1,
         perp_type=None,
         calculate_xyz_background=False,
+        bgr_idx=None,
+        stokes=False,
         calculate_spherical=False,
         spherical_params=None,
         calculate_discernible=False,
-        discernibility="angular"
+        discernibility="angular",
+        add_signal_bg=False,
     ):
         if mode == "total":
             self.get_total_spectra(
                 calculate_xyz_background=calculate_xyz_background,
+                bgr_idx=bgr_idx,
                 calculate_spherical=calculate_spherical,
                 spherical_params=spherical_params,
                 calculate_discernible=calculate_discernible,
@@ -347,20 +471,8 @@ class VacuumEmissionAnalyzer:
                 perp_type=perp_type,
                 calculate_spherical=calculate_spherical,
                 spherical_params=spherical_params,
+                stokes=stokes,
             )
-
-
-def get_simulation_fields(ini_file):
-    ini = read_yaml(ini_file)
-    fields_params = ini["fields"]
-    grid_params = ini["grid"]
-
-    grid_xyz, grid_t = setup_grids(fields_params, grid_params)
-    grid_xyz.get_k_grid()
-
-    fields = []
-    for field_params in fields_params.values():
-        field = ExternalField([field_params], grid_xyz)
-        fields.append(field)
-    return fields
+        elif mode == "mix_signal_bg":
+            self.get_mix_signal_bg(add_signal_bg=add_signal_bg)
 
