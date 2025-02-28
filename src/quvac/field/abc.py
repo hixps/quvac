@@ -1,5 +1,8 @@
 """
 Abstract interfaces for field classes.
+
+For details about spectral coefficient calculation (a1, a2)
+refer to Theory section of documentation. 
 """
 
 import logging

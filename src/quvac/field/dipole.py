@@ -42,11 +42,6 @@ class DipoleAnalytic(ExplicitField):
                 Type of dipole, either "electric" or "magnetic".
     grid : quvac.grid.GridXYZ
         Spatial and spectral grid.
-
-    Methods
-    -------
-    calculate_field(t, E_out=None, B_out=None, mode="real")
-        Calculates the electric and magnetic fields at a given time step.
     
     Notes
     -----
