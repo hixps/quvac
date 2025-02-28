@@ -20,11 +20,6 @@ class Field(ABC):
 
     This class defines the interface for calculating fields at a given time step.
     Subclasses must implement the ``calculate_field`` method.
-
-    Methods
-    -------
-    calculate_field(t, E_out=None, B_out=None, **kwargs)
-        Calculates fields for a given time step.
     """
     @abstractmethod
     def calculate_field(self, t, E_out=None, B_out=None, **kwargs):
@@ -76,20 +71,13 @@ class ExplicitField(Field):
         The a1 spectral coefficient.
     a2 : complex numpy.ndarray
         The a2 spectral coefficient.
-
-    Methods
-    -------
-    allocate_fft()
-        Allocates memory for FFT calculations.
-    get_a12(t0=None)
-        Calculates the a1 and a2 coefficients at a given time step.
     """
 
     def __init__(self, grid):
         self.grid_xyz = grid
         self.__dict__.update(self.grid_xyz.__dict__)
 
-    def allocate_fft(self):
+    def _allocate_fft(self):
         """
         Allocates memory for FFT calculations.
         """
@@ -131,7 +119,7 @@ class ExplicitField(Field):
         is corrected to the desired value.
         """
         t0 = t0 if t0 is not None else self.t0
-        self.allocate_fft()
+        self._allocate_fft()
         self.calculate_field(t0, E_out=self.Ef, mode="complex")
 
         for idx in range(3):

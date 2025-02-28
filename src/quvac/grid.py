@@ -35,8 +35,9 @@ class GridXYZ:
     Parameters
     ----------
     grid : tuple of np.array
-        A tuple containing three numpy arrays (x, y, z) representing the spatial grid for field discretization.
-
+        A tuple containing three numpy arrays (x, y, z) representing the spatial grid 
+        for field discretization.
+    
     Attributes
     ----------
     grid : tuple of np.array
@@ -166,11 +167,6 @@ def get_pol_basis(theta, phi):
     return e1, e2
 
 
-def _check_keys(field_params, required_keys):
-    err_msg = f"Field parameters must have {required_keys} keys"
-    assert all(key in field_params for key in required_keys), err_msg
-
-
 def gaussian_bandwidth(field_params):
     """
     Calculate the gaussian bandwidth.
@@ -280,6 +276,11 @@ def get_bw(field_params):
     elif "dipole" in ftype:
         bws = dipole_bandwidth(field_params)
     return bws
+
+
+def _check_keys(field_params, required_keys):
+    err_msg = f"Field parameters must have {required_keys} keys"
+    assert all(key in field_params for key in required_keys), err_msg
 
 
 def get_kmax_from_bw(field_params):
@@ -570,7 +571,7 @@ def setup_grids(fields_params, grid_params):
     -------
     tuple
         A tuple containing:
-            - grid_xyz : GridXYZ
+            - grid_xyz : quvac.grid.GridXYZ
                 The spatial grid object.
             - grid_t : numpy.ndarray
                 The temporal grid array.

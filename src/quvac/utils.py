@@ -2,6 +2,9 @@
 Useful generic utilities
 """
 
+import pkgutil
+import importlib
+import inspect
 import os
 import platform
 import resource
@@ -84,30 +87,29 @@ def get_maxrss():
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
 
-@contextmanager
-def archive_manager(archive_name, keys):
-    keys = [keys] if isinstance(keys, str) else keys
-    f = zipfile.ZipFile(archive_name, "a")
-    files = [f"{key}.npy" for key in keys]
-
-    yield files
-
-    for file in files:
-        f.write(file)
-        os.remove(file)
-    f.close()
-
-
-def add_data_to_npz(save_path, data, create_npz=False):
-    if create_npz:
-        np.savez(save_path, **data)
-    else:
-        new_keys = list(data.keys())
-        with archive_manager(save_path, new_keys) as archive:
-            for file in archive:
-                key = file.split(".")[0]
-                np.save(file, data[key])
-
-
 def zip_directory_shutil(directory_path, output_path):
     shutil.make_archive(output_path, 'zip', directory_path)
+
+
+def find_classes_in_package(package_name):
+    """Find all class names in a given package."""
+    classes = []
+    
+    # Import the package
+    package = importlib.import_module(package_name)
+    
+    # Recursively find all modules in the package
+    for _, module_name, _ in pkgutil.walk_packages(package.__path__, package.__name__ + "."):
+        try:
+            module = importlib.import_module(module_name)
+            
+            # Inspect module members and find classes
+            for name, obj in inspect.getmembers(module, inspect.isclass):
+                # Ensure class belongs to the module (not an imported one)
+                if obj.__module__ == module_name:
+                    classes.append(f"{module_name}.{name}")
+        
+        except Exception as e:
+            print(f"Skipping {module_name} due to error: {e}")
+
+    return classes
