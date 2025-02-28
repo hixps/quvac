@@ -9,45 +9,20 @@
 project = 'quvac'
 copyright = '2025, maxbalrog'
 author = 'maxbalrog'
-release = '0.1.0'
+release = '0.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.autosummary", 
-    "autoapi.extension",]
-autosummary_generate = True
-
-autoapi_dirs = ["../../src/quvac"]  # Path to your package
-autoapi_options = [
-    "members",
-    # "undoc-members",
-    # "private-members",
-    "special-members",
-    "imported-members",
-    "show-inheritance",  # Show class inheritance diagrams
-    "show-module-summary",  # Generates a summary per module
-    "generate-api-docs",
-]
-autoapi_ignore = ["*/cluster/*", "*log*"]
+extensions = []
 
 templates_path = ['_templates']
 exclude_patterns = []
 
-def skip_undocumented_members(app, what, name, obj, skip, options):
-    if what == "attribute" and not obj.__doc__:
-        skip = True
-    return skip
-
-def setup(app):
-    app.connect("autoapi-skip-member", skip_undocumented_members)
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'furo'
+html_theme = 'alabaster'
 html_static_path = ['_static']
