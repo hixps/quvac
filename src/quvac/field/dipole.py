@@ -1,6 +1,15 @@
 """
 Analytic expression for dipole wave and function to create multibeam
 configuration by compining several focused fields.
+
+----
+
+.. [1] I. Gonoskov et al. "Dipole pulse theory: Maximizing the field
+    amplitude from 4 π focused laser pulses." PRA 86.5 (2012): 053836.
+
+.. [2] S. S. Bulanov et al. "Multiple Colliding Electromagnetic Pulses: 
+    A Way to Lower the Threshold of e+ e-Pair Production from Vacuum." 
+    PRL 104.22 (2010): 220404.
 """
 
 from copy import deepcopy
@@ -45,9 +54,7 @@ class DipoleAnalytic(ExplicitField):
     
     Notes
     -----
-    Dipole wave expression is from I. Gonoskov et al. "Dipole pulse 
-    theory: Maximizing the field amplitude from 4 π focused laser pulses." 
-    PRA 86.5 (2012): 053836.
+    Dipole wave expression is from [1]_.
 
     d0 is along ez by default.
     """
@@ -253,10 +260,7 @@ def create_multibeam(params, n_beams=6, mode='belt', theta0=0):
 
     Notes
     -----
-    Configuration follows from
-    S. S. Bulanov et al. "Multiple Colliding Electromagnetic Pulses: 
-    A Way to Lower the Threshold of e+ e-Pair Production from Vacuum." 
-    PRL 104.22 (2010): 220404.
+    Configuration follows from [2]_.
     """
     # distribute the energy
     W_per_beam = params['W'] / n_beams

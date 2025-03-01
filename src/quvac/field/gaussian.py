@@ -1,5 +1,10 @@
 """
 Analytic expression for paraxial gaussian (0-order and higher-orders).
+
+----
+
+.. [1] Y. I. Salamin. "Fields of a Gaussian beam beyond the paraxial 
+    approximation." Applied Physics B 86 (2007): 319-326.
 """
 
 import numexpr as ne
@@ -48,9 +53,7 @@ class GaussianAnalytic(ExplicitField):
     -----
     All field parameters are in SI units.
 
-    Higher-order paraxial Gaussian orders are taken from 
-    Y. I. Salamin. "Fields of a Gaussian beam beyond the paraxial 
-    approximation." Applied Physics B 86 (2007): 319-326.
+    Higher-order paraxial Gaussian orders are from [1]_.
     """
 
     def __init__(self, field_params, grid):
