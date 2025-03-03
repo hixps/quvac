@@ -9,7 +9,7 @@ Here we provide conventions used to implement the calculation of vacuum emission
 We specify formulas in natural units (:math:`\hbar = c = 1`) but our code uses SI units. We use :math:`g^{\mu\nu}=(-1,1,1,1)`.
 
 .. note::
-    We follow the convention/derivation put by [1]_ (Eq. 27 and below) and [Blinne2019]_ (Section II).
+    We follow the convention/derivation put by [1]_ (Eq. 27 and below) and [2]_ (Section II).
 
 Formalism
 ^^^^^^^^^
@@ -92,7 +92,7 @@ In code we define :math:`I_{ij} = \vec \epsilon_i \cdot \vec U_j`.
 Maxwell propagation
 -------------------
 
-Here we specify the procedure for linear Maxwell propagation of electromagnetic fields (it follows Section II of [Blinne2019]_ ).
+Here we specify the procedure for linear Maxwell propagation of electromagnetic fields (it follows Section II of [2]_ ).
 
 We define spatial Fourier transforms as follows
 
