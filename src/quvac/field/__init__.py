@@ -9,10 +9,12 @@ Various field profiles and interfaces to unite them.
 """
 from quvac.field.dipole import DipoleAnalytic
 from quvac.field.gaussian import GaussianAnalytic
+from quvac.field.model import EBInhomogeneity
 
 ANALYTIC_FIELDS = {
     "dipole_analytic": DipoleAnalytic,
     "paraxial_gaussian_analytic": GaussianAnalytic,
+    "eb_inhomogeneity": EBInhomogeneity,
 }
 
 SPATIAL_MODEL_FIELDS = {

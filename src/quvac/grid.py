@@ -461,6 +461,8 @@ def get_box_size(fields_params, grid_params):
             length = field.get("w0", 0)
         elif "dipole" in ftype:
             length = c * field.get("tau", 0) / 4
+        else:
+            length = 0
         perp_max = np.maximum(length, perp_max)
     
     tau_max = max([field.get("tau", 0) for field in fields_params])
@@ -493,7 +495,7 @@ def create_dynamic_grid(fields_params, grid_params):
     collision_geometry = grid_params.get("collision_geometry", "z")
 
     tau_max = max([field.get("tau", 0) for field in fields_params])
-    lam_min = min([field.get("lam") for field in fields_params])
+    lam_min = min([field.get("lam", 1e10) for field in fields_params])
 
     transverse_size, longitudinal_size = get_box_size(fields_params, grid_params)
 
@@ -584,6 +586,11 @@ def setup_grids(fields_params, grid_params):
     if grid_params["mode"] == "dynamic":
         if isinstance(fields_params, dict):
             fields_params = list(fields_params.values())
+        # filter out fields that should not contribute to dynamic grid creation
+        ignore_idx = grid_params.get("ignore_idx", None)
+        if ignore_idx is not None:
+            fields_params = [field for idx,field in enumerate(fields_params) 
+                            if idx not in ignore_idx]
         grid_params = create_dynamic_grid(fields_params, grid_params)
 
     x0, y0, z0 = grid_params["box_xyz"]
