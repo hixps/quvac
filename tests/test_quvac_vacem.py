@@ -62,7 +62,7 @@ def test_theta_beta_w0():
             status = os.system(f"{SIMULATION_SCRIPT} --input {ini_file}")
             assert status == 0, "Script execution did not finish successfully"
 
-            result_file = os.path.join(path, "spectra.npz")
+            result_file = os.path.join(path, "spectra_total.npz")
             quvac_data = np.load(result_file)
             quvac_result = quvac_data["N_total"]
 

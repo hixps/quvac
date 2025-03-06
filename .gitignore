@@ -5,6 +5,7 @@
 */*.npy
 imgs/*
 data/*
+experiments/*
 wisdom/*
 */wisdom/*
 profile*

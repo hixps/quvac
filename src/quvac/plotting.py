@@ -55,11 +55,13 @@ def pi_formatter(x, pos):
     str
         Formatted tick label.
     """
-    fractions = {0: "0", pi/4: r"$\frac{\pi}{4}$", 
-                 pi/2: r"$\frac{\pi}{2}$", 3*pi/4: r"$\frac{3\pi}{4}$",
-                 pi: r"$\pi$", 5*pi/4: r"$\frac{5*\pi}{4}$",
-                 3*pi/2: r"$\frac{3\pi}{2}$", 7*pi/8: r"$\frac{7\pi}{8}$",
-                 2*pi: r"$2\pi$"}
+    fractions = {0: "0", pi/8: r"$\frac{\pi}{8}$", pi/4: r"$\frac{\pi}{4}$", 
+                 3*pi/8: r"$\frac{3\pi}{8}$", pi/2: r"$\frac{\pi}{2}$",
+                 5*pi/8: r"$\frac{5\pi}{8}$", 3*pi/4: r"$\frac{3\pi}{4}$", 7*pi/8: r"$\frac{7\pi}{8}$",
+                 pi: r"$\pi$", 9*pi/8: r"$\frac{9\pi}{8}$", 5*pi/4: r"$\frac{5*\pi}{4}$",
+                 11*pi/8: r"$\frac{11\pi}{8}$", 3*pi/2: r"$\frac{3\pi}{2}$",
+                 13*pi/8: r"$\frac{13\pi}{8}$", 7*pi/4: r"$\frac{7\pi}{4}$",
+                 15*pi/8: r"$\frac{15\pi}{8}$", 2*pi: r"$2\pi$"}
     return fractions.get(x, f"${x/np.pi:.2g}\\pi$")
 
 
