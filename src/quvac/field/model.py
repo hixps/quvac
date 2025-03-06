@@ -15,7 +15,6 @@ Currently implements:
 import numexpr as ne
 import numpy as np
 from scipy.constants import c, pi
-from scipy.spatial.transform import Rotation
 
 from quvac.field.abc import Field
 from quvac.field.utils import get_field_energy
@@ -50,19 +49,12 @@ class EBInhomogeneity(Field):
         Spatial and grid.
     """
     def __init__(self, field_params, grid):
-        self.grid_xyz = grid
-        self.__dict__.update(self.grid_xyz.__dict__)
-
-        angles = "theta phi".split()
-        for key, val in field_params.items():
-            if key in angles:
-                val *= pi / 180.0
-            setattr(self, key, val)
+        super().__init__(field_params, grid)
 
         self.beta = getattr(self, "beta", 0.)
         self.field_inhom = getattr(self, "field_inhom", "magnetic")
         # rotate coordinate grid
-        self.rotate_coordinates()
+        self.rotate_coordinates(rotate_grid=False)
 
         # get envelope
         self.get_envelope()
@@ -76,31 +68,6 @@ class EBInhomogeneity(Field):
         if "W" in field_params:
             self.E0 = 1.
             self.check_energy()
-
-    def get_rotation(self):
-        """
-        Defines the rotation transforming (0,0,1) -> (kx,ky,kz) 
-        for vectors and (1,0,0) -> e(beta) = e1*cos(beta) + e2*sin(beta).
-        """
-        self.rotation = Rotation.from_euler("ZYZ", (self.phi, self.theta, self.beta))
-        self.rotation_m = self.rotation.as_matrix()
-        # Inverse rotation: (kx,ky,kz) -> (0,0,1)
-        self.rotation_bwd = self.rotation.inv()
-        self.rotation_bwd_m = self.rotation_bwd.as_matrix()
-
-    def rotate_coordinates(self):
-        """
-        Rotates the coordinate grid.
-        """
-        self.get_rotation()
-        self.x, self.y, self.z = self.xyz
-        # axes = "xyz"
-        # x_, y_, z_ = self.xyz
-        # for i, ax in enumerate(axes):
-        #     mx, my, mz = self.rotation_bwd_m[i, :]
-        #     self.__dict__[ax] = ne.evaluate(
-        #         "mx*x_ + my*y_ + mz*z_", global_dict=self.__dict__
-        #     )
     
     def get_envelope(self):
         match self.envelope_type:
@@ -132,15 +99,5 @@ class EBInhomogeneity(Field):
             raise NotImplementedError(f"`{self.field_inhom}` field inhomogeneity"
                                       "is not supported")
         
-        if E_out is None:
-            E_out = [np.zeros(self.grid_shape, dtype=config.FDTYPE) for _ in range(3)]
-        if B_out is None:
-            B_out = [np.zeros(self.grid_shape, dtype=config.FDTYPE) for _ in range(3)]
-
-        # Transform to the original coordinate frame
-        for i, (Ei, Bi) in enumerate(zip(E_out, B_out)):
-            mx, my, mz = self.rotation_m[i, :]
-            Ei += ne.evaluate("mx*Ex + my*Ey + mz*Ez", global_dict=self.__dict__).astype(config.FDTYPE)
-            Bi += ne.evaluate("mx*Bx + my*By + mz*Bz", global_dict=self.__dict__).astype(config.FDTYPE)
-
+        E_out, B_out = self.rotate_fields_back(E_out, B_out, mode="real")
         return E_out, B_out

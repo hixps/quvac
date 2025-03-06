@@ -10,7 +10,6 @@ Analytic expression for paraxial gaussian (0-order and higher-orders).
 import numexpr as ne
 import numpy as np
 from scipy.constants import c, pi
-from scipy.spatial.transform import Rotation
 
 from quvac.field.abc import ExplicitField
 from quvac.field.utils import get_field_energy
@@ -57,15 +56,7 @@ class GaussianAnalytic(ExplicitField):
     """
 
     def __init__(self, field_params, grid):
-        super().__init__(grid)
-
-        # Dynamically create class instance variables available with
-        # self.<variable_name>
-        angles = "theta phi beta phase0".split()
-        for key, val in field_params.items():
-            if key in angles:
-                val *= pi / 180.0
-            setattr(self, key, val)
+        super().__init__(field_params, grid)
 
         self.phase0 += pi / 2.0
         self.order = getattr(self, "order", 0)
@@ -105,30 +96,6 @@ class GaussianAnalytic(ExplicitField):
         # Set up correct field amplitude
         if "W" in field_params:
             self.check_energy()
-
-    def get_rotation(self):
-        """
-        Defines the rotation transforming (0,0,1) -> (kx,ky,kz) 
-        for vectors and (1,0,0) -> e(beta) = e1*cos(beta) + e2*sin(beta).
-        """
-        self.rotation = Rotation.from_euler("ZYZ", (self.phi, self.theta, self.beta))
-        self.rotation_m = self.rotation.as_matrix()
-        # Inverse rotation: (kx,ky,kz) -> (0,0,1)
-        self.rotation_bwd = self.rotation.inv()
-        self.rotation_bwd_m = self.rotation_bwd.as_matrix()
-
-    def rotate_coordinates(self):
-        """
-        Rotates the coordinate grid.
-        """
-        self.get_rotation()
-        axes = "xyz"
-        x_, y_, z_ = self.xyz
-        for i, ax in enumerate(axes):
-            mx, my, mz = self.rotation_bwd_m[i, :]
-            self.__dict__[ax] = ne.evaluate(
-                "mx*(x_-x0) + my*(y_-y0) + mz*(z_-z0)", global_dict=self.__dict__
-            )
 
     def define_ho_variables(self):
         """
@@ -236,19 +203,7 @@ class GaussianAnalytic(ExplicitField):
             self.Ey = self.Ez = self.Bx = self.Bz = 0.0
 
         if mode == "real":
-            for field in "Ex Ey Ez By Bz".split():
-                self.__dict__[field] = np.real(self.__dict__[field])
+            self.convert_fields_to_real()
 
-        dtype = np.float64 if mode == "real" else np.complex128
-        if E_out is None:
-            E_out = [np.zeros(self.grid_shape, dtype=dtype) for _ in range(3)]
-        if B_out is None:
-            B_out = [np.zeros(self.grid_shape, dtype=dtype) for _ in range(3)]
-
-        # Transform to the original coordinate frame
-        for i, (Ei, Bi) in enumerate(zip(E_out, B_out)):
-            mx, my, mz = self.rotation_m[i, :]
-            ne.evaluate("Ei + mx*Ex + my*Ey + mz*Ez", out=Ei, global_dict=self.__dict__)
-            ne.evaluate("Bi + mx*Bx + my*By + mz*Bz", out=Bi, global_dict=self.__dict__)
-
+        E_out, B_out = self.rotate_fields_back(E_out, B_out, mode)
         return E_out, B_out
