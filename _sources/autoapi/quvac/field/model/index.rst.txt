@@ -56,6 +56,13 @@ Module Contents
                                 For 'gauss':
                                     - 'w0' : float
                                         Waist size.
+                                For 'gauss-modulated':
+                                    - 'w0' : float
+                                        Waist size.
+                                    - 'lam': float
+                                        Wavelength of modulation.
+                                    - 'phase0': float, optional
+                                        Initial phase
    :type field_params: dict
    :param grid: Spatial and grid.
    :type grid: quvac.grid.GridXYZ

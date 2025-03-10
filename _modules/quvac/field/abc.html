@@ -336,6 +336,7 @@
 <span class="sd">        Defines the rotation transforming (0,0,1) -&gt; (kx,ky,kz) </span>
 <span class="sd">        for vectors and (1,0,0) -&gt; e(beta) = e1*cos(beta) + e2*sin(beta).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;beta&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_euler</span><span class="p">(</span><span class="s2">&quot;ZYZ&quot;</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">theta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rotation_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="o">.</span><span class="n">as_matrix</span><span class="p">()</span>
         <span class="c1"># Inverse rotation: (kx,ky,kz) -&gt; (0,0,1)</span>
