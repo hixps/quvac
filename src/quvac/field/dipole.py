@@ -13,6 +13,7 @@ configuration by compining several focused fields.
 """
 
 from copy import deepcopy
+import warnings
 
 import numexpr as ne
 import numpy as np
@@ -191,9 +192,39 @@ class DipoleAnalytic(ExplicitField):
 
         E_out, B_out = self.rotate_fields_back(E_out, B_out, mode)
         return E_out, B_out
-    
 
-def create_multibeam(params, n_beams=6, mode='belt', theta0=0):
+
+def rotate_multibeam(params, geometry="xz"):
+    """
+    Rotate the multibeam configuration based on the specified geometry.
+
+    Parameters
+    ----------
+    params : dict
+        Dictionary containing the field parameters.
+    geometry : str, optional
+        Geometry of the beam configuration ('xz', 'yz', or 'xy'). Default is 'xz'.
+
+    Returns
+    -------
+    tuple
+        Updated parameters dictionary and the keys for theta and phi angles.
+    """
+    key_theta = "theta"
+    key_phi = "phi"
+
+    if geometry in ["xz", "yz"]:
+        params["phi"] = 0 if geometry == "xz" else 90
+    elif geometry == "xy":
+        key_theta = "phi"
+        key_phi = "theta"
+        params["theta"] = 90
+    else:
+        warnings.warn(f"{geometry} geometry is not supported, keeping default values from seed beam.")
+    return params, key_theta, key_phi
+
+
+def create_multibeam(params, n_beams=6, mode='belt', theta0=0, geometry="xz"):
     """
     Create multibeam configuration from several focused pulses to 
     approximate the dipole wave and achieve higher intensity 
@@ -209,6 +240,8 @@ def create_multibeam(params, n_beams=6, mode='belt', theta0=0):
         Configuration mode, either 'belt' or 'sphere', by default 'belt'.
     theta0 : float, optional
         Initial angle for the beams, by default 0.
+    geometry : str, optional
+        Geometry of the beam configuration ('xz', 'yz', or 'xy'), by default 'xz'.
 
     Returns
     -------
@@ -230,8 +263,9 @@ def create_multibeam(params, n_beams=6, mode='belt', theta0=0):
     # create geometry
     for i in range(n_beams):
         params_beam = deepcopy(params)
+        params_beam, key_theta, key_phi = rotate_multibeam(params_beam, geometry)
         params_beam['W'] = W_per_beam
-        params_beam['theta'] = i*theta_c + theta0
+        params_beam[key_theta] = i*theta_c + theta0
         match mode:
             case "belt":
                 beams[f"field_{i+1}"] = params_beam
@@ -239,6 +273,6 @@ def create_multibeam(params, n_beams=6, mode='belt', theta0=0):
                 for j,phi in enumerate(phi_arr):
                     idx = i*3 + j
                     params_phi = deepcopy(params_beam)
-                    params_phi['phi'] = phi
+                    params_phi[key_phi] += phi
                     beams[f"field_{idx+1}"] = params_phi
     return beams
