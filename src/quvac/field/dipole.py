@@ -194,36 +194,6 @@ class DipoleAnalytic(ExplicitField):
         return E_out, B_out
 
 
-# def rotate_multibeam(params, geometry="xz"):
-#     """
-#     Rotate the multibeam configuration based on the specified geometry.
-
-#     Parameters
-#     ----------
-#     params : dict
-#         Dictionary containing the field parameters.
-#     geometry : str, optional
-#         Geometry of the beam configuration ('xz', 'yz', or 'xy'). Default is 'xz'.
-
-#     Returns
-#     -------
-#     tuple
-#         Updated parameters dictionary and the keys for theta and phi angles.
-#     """
-#     key_theta = "theta"
-#     key_phi = "phi"
-
-#     if geometry in ["xz", "yz"]:
-#         params["phi"] = 0 if geometry == "xz" else 90
-#     elif geometry == "xy":
-#         key_theta = "phi"
-#         key_phi = "theta"
-#         params["theta"] = 90
-#     else:
-#         warnings.warn(f"{geometry} geometry is not supported, keeping default values from seed beam.")
-#     return params, key_theta, key_phi
-
-
 def create_multibeam(params, n_beams=6, mode='belt', phi0=0, idx0=1):
     """
     Create multibeam configuration from several focused pulses to 
@@ -238,7 +208,7 @@ def create_multibeam(params, n_beams=6, mode='belt', phi0=0, idx0=1):
         Number of beams, by default 6.
     mode : str, optional
         Configuration mode, either 'belt' or 'sphere', by default 'belt'.
-    theta0 : float, optional
+    phi0 : float, optional
         Initial angle for the beams, by default 0.
     idx0 : int, optional
         Offset index for `beams` dictionary.
@@ -274,21 +244,4 @@ def create_multibeam(params, n_beams=6, mode='belt', phi0=0, idx0=1):
                     params_phi = deepcopy(params_beam)
                     params_phi["theta"] += theta
                     beams[f"field_{idx+1+idx0}"] = params_phi
-    # theta_c = 360/n_beams
-
-    # # create geometry
-    # for i in range(n_beams):
-    #     params_beam = deepcopy(params)
-    #     params_beam, key_theta, key_phi = rotate_multibeam(params_beam, geometry)
-    #     params_beam['W'] = W_per_beam
-    #     params_beam[key_theta] = i*theta_c + theta0
-    #     match mode:
-    #         case "belt":
-    #             beams[f"field_{i+1+idx0}"] = params_beam
-    #         case "sphere":
-                # for j,phi in enumerate(phi_arr):
-                #     idx = i*3 + j
-                #     params_phi = deepcopy(params_beam)
-                #     params_phi[key_phi] += phi
-                #     beams[f"field_{idx+1+idx0}"] = params_phi
     return beams
