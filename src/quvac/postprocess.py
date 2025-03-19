@@ -221,6 +221,59 @@ def integrate_spherical(arr, axs, axs_names=["k", "theta", "phi"],
     return integrand
 
 
+def signal_in_detector(dN, theta, phi, detector):
+    """
+    Calculate the signal detected within a specified detector region.
+
+    Parameters
+    ----------
+    dN : numpy.ndarray
+        Differential angular photon spectrum on a spherical grid.
+    theta : numpy.ndarray
+        Array of polar angles (in radians) corresponding to the spherical grid.
+    phi : numpy.ndarray
+        Array of azimuthal angles (in radians) corresponding to the spherical grid.
+    detector : dict
+        Dictionary specifying the detector region. Required keys are:
+        - 'phi0' : float
+            Central azimuthal angle of the detector (in degrees).
+        - 'theta0' : float
+            Central polar angle of the detector (in degrees).
+        - 'dphi' : float
+            Half-width of the azimuthal angle range (in degrees).
+        - 'dtheta' : float
+            Half-width of the polar angle range (in degrees).
+
+    Returns
+    -------
+    float
+        The total signal detected within the specified detector region.
+
+    Notes
+    -----
+    The function integrates the signal over the specified detector region in spherical coordinates.
+    """
+    phi0, theta0, dphi, dtheta = [np.radians(detector[key]) for key 
+                                  in "phi0 theta0 dphi dtheta".split()]
+    # consider detector regions that lie on the line phi=0 or phi=2*pi
+    if phi0-dphi < 0:
+        idx_phi = (phi <= phi0+dphi) + (phi >= 2*pi-abs(phi0-dphi))
+    elif phi0+dphi > 2*pi:
+        idx_phi = (phi >= phi0-dphi) + (phi <= phi0+dphi-2*pi)
+    else:
+        idx_phi = (phi >= phi0-dphi) * (phi <= phi0+dphi)
+    
+    idx_theta = (theta >= theta0-dtheta) * (theta <= theta0+dtheta)
+    
+    dN_det = dN[idx_theta]
+    dN_det = dN[:,idx_phi]
+    theta_det, phi_det = theta[idx_theta], phi[idx_phi]
+    N_detected = integrate_spherical(dN_det, [theta_det, phi_det],
+                                     axs_names=['theta','phi'],
+                                     axs_integrate=['theta','phi'])
+    return N_detected
+    
+
 def get_simulation_fields(ini_file):
     """
     Get simulation fields from an initialization file.
