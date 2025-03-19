@@ -39,6 +39,7 @@ Functions
    quvac.postprocess.xyz2idx
    quvac.postprocess.cartesian_to_spherical_array
    quvac.postprocess.integrate_spherical
+   quvac.postprocess.signal_in_detector
    quvac.postprocess.get_simulation_fields
    quvac.postprocess.transform_S12_to_a12
    quvac.postprocess.get_spectra_from_Stokes
@@ -136,6 +137,37 @@ Module Contents
    the jacobian factor, therefore the array is mutiplied by k**2 sin(theta).
 
    The function uses trapezoidal rule for integration.
+
+
+.. py:function:: signal_in_detector(dN, theta, phi, detector, align_to_max=False)
+
+   Calculate the signal detected within a specified detector region.
+
+   :param dN: Differential angular photon spectrum on a spherical grid.
+   :type dN: numpy.ndarray
+   :param theta: Array of polar angles (in radians) corresponding to the spherical grid.
+   :type theta: numpy.ndarray
+   :param phi: Array of azimuthal angles (in radians) corresponding to the spherical grid.
+   :type phi: numpy.ndarray
+   :param detector: Dictionary specifying the detector region. Required keys are:
+                    - 'phi0' : float
+                        Central azimuthal angle of the detector (in degrees).
+                    - 'theta0' : float
+                        Central polar angle of the detector (in degrees).
+                    - 'dphi' : float
+                        Half-width of the azimuthal angle range (in degrees).
+                    - 'dtheta' : float
+                        Half-width of the polar angle range (in degrees).
+   :type detector: dict
+   :param align_to_max: Whether to align detector to the max spot in the detected region, by default False
+   :type align_to_max: bool
+
+   :returns: The total signal detected within the specified detector region.
+   :rtype: float
+
+   .. rubric:: Notes
+
+   The function integrates the signal over the specified detector region in spherical coordinates.
 
 
 .. py:function:: get_simulation_fields(ini_file)

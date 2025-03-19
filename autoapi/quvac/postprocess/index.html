@@ -326,13 +326,16 @@ linear polarization basis.</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#quvac.postprocess.integrate_spherical" title="quvac.postprocess.integrate_spherical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate_spherical</span></code></a>(arr, axs[, axs_names, axs_integrate])</p></td>
 <td><p>Integrate an array over spherical coordinates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#quvac.postprocess.get_simulation_fields" title="quvac.postprocess.get_simulation_fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_simulation_fields</span></code></a>(ini_file)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#quvac.postprocess.signal_in_detector" title="quvac.postprocess.signal_in_detector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">signal_in_detector</span></code></a>(dN, theta, phi, detector[, ...])</p></td>
+<td><p>Calculate the signal detected within a specified detector region.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.postprocess.get_simulation_fields" title="quvac.postprocess.get_simulation_fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_simulation_fields</span></code></a>(ini_file)</p></td>
 <td><p>Get simulation fields from an initialization file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.postprocess.transform_S12_to_a12" title="quvac.postprocess.transform_S12_to_a12"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transform_S12_to_a12</span></code></a>(S1, S2, k[, transform])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#quvac.postprocess.transform_S12_to_a12" title="quvac.postprocess.transform_S12_to_a12"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transform_S12_to_a12</span></code></a>(S1, S2, k[, transform])</p></td>
 <td><p>Calculate spectral coefficients a1 and a2 from complex signal</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#quvac.postprocess.get_spectra_from_Stokes" title="quvac.postprocess.get_spectra_from_Stokes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_spectra_from_Stokes</span></code></a>(P0, P1, P2, P3[, basis])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.postprocess.get_spectra_from_Stokes" title="quvac.postprocess.get_spectra_from_Stokes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_spectra_from_Stokes</span></code></a>(P0, P1, P2, P3[, basis])</p></td>
 <td><p>Calculate spectra from Stokes parameters.</p></td>
 </tr>
 </tbody>
@@ -457,6 +460,53 @@ in the future.</p></li>
 <p>We assume that the array is given on a spherical grid without
 the jacobian factor, therefore the array is mutiplied by k**2 sin(theta).</p>
 <p>The function uses trapezoidal rule for integration.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="quvac.postprocess.signal_in_detector">
+<span class="sig-prename descclassname"><span class="pre">quvac.postprocess.</span></span><span class="sig-name descname"><span class="pre">signal_in_detector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dN</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">align_to_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/quvac/postprocess.html#signal_in_detector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quvac.postprocess.signal_in_detector" title="Link to this definition">¶</a></dt>
+<dd><p>Calculate the signal detected within a specified detector region.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dN</strong> (<em>numpy.ndarray</em>) – Differential angular photon spectrum on a spherical grid.</p></li>
+<li><p><strong>theta</strong> (<em>numpy.ndarray</em>) – Array of polar angles (in radians) corresponding to the spherical grid.</p></li>
+<li><p><strong>phi</strong> (<em>numpy.ndarray</em>) – Array of azimuthal angles (in radians) corresponding to the spherical grid.</p></li>
+<li><p><strong>detector</strong> (<em>dict</em>) – <p>Dictionary specifying the detector region. Required keys are:
+- ‘phi0’ : float</p>
+<blockquote>
+<div><p>Central azimuthal angle of the detector (in degrees).</p>
+</div></blockquote>
+<ul>
+<li><dl class="simple">
+<dt>’theta0’<span class="classifier">float</span></dt><dd><p>Central polar angle of the detector (in degrees).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>’dphi’<span class="classifier">float</span></dt><dd><p>Half-width of the azimuthal angle range (in degrees).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>’dtheta’<span class="classifier">float</span></dt><dd><p>Half-width of the polar angle range (in degrees).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p></li>
+<li><p><strong>align_to_max</strong> (<em>bool</em>) – Whether to align detector to the max spot in the detected region, by default False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The total signal detected within the specified detector region.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The function integrates the signal over the specified detector region in spherical coordinates.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -904,6 +954,7 @@ by default False.</p></li>
 <li><a class="reference internal" href="#quvac.postprocess.xyz2idx"><code class="docutils literal notranslate"><span class="pre">xyz2idx()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.postprocess.cartesian_to_spherical_array"><code class="docutils literal notranslate"><span class="pre">cartesian_to_spherical_array()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.postprocess.integrate_spherical"><code class="docutils literal notranslate"><span class="pre">integrate_spherical()</span></code></a></li>
+<li><a class="reference internal" href="#quvac.postprocess.signal_in_detector"><code class="docutils literal notranslate"><span class="pre">signal_in_detector()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.postprocess.get_simulation_fields"><code class="docutils literal notranslate"><span class="pre">get_simulation_fields()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.postprocess.transform_S12_to_a12"><code class="docutils literal notranslate"><span class="pre">transform_S12_to_a12()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.postprocess.get_spectra_from_Stokes"><code class="docutils literal notranslate"><span class="pre">get_spectra_from_Stokes()</span></code></a></li>

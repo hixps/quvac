@@ -16,6 +16,7 @@ Functions
 
    quvac.plotting.save_fig
    quvac.plotting.pi_formatter
+   quvac.plotting.plot_roi
    quvac.plotting.plot_mollweide
    quvac.plotting.plot_fields
 
@@ -44,6 +45,31 @@ Module Contents
 
    :returns: Formatted tick label.
    :rtype: str
+
+
+.. py:function:: plot_roi(ax, x0, y0, dx, dy, line_kwargs)
+
+   Plot a rectangular region of interest (ROI) on a given axis.
+
+   :param ax: The axis on which to plot the ROI.
+   :type ax: matplotlib.axes.Axes
+   :param x0: The x-coordinate of the center of the ROI.
+   :type x0: float
+   :param y0: The y-coordinate of the center of the ROI.
+   :type y0: float
+   :param dx: Half the width of the ROI.
+   :type dx: float
+   :param dy: Half the height of the ROI.
+   :type dy: float
+   :param line_kwargs: Keyword arguments to customize the appearance of the ROI lines (e.g., color, linestyle).
+   :type line_kwargs: dict
+
+   :returns: The axis with the plotted ROI.
+   :rtype: matplotlib.axes.Axes
+
+   .. rubric:: Notes
+
+   The ROI is represented as a rectangle centered at (x0, y0) with width 2*dx and height 2*dy.
 
 
 .. py:function:: plot_mollweide(fig, ax, phi, theta, data, cmap='coolwarm', norm=None)

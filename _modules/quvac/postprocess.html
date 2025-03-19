@@ -507,6 +507,78 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_detector_idx</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi0</span><span class="p">,</span> <span class="n">theta0</span><span class="p">,</span> <span class="n">dphi</span><span class="p">,</span> <span class="n">dtheta</span><span class="p">):</span>
+    <span class="c1"># consider detector regions that lie on the line phi=0 or phi=2*pi</span>
+    <span class="k">if</span> <span class="n">phi0</span><span class="o">-</span><span class="n">dphi</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">idx_phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi</span> <span class="o">&lt;=</span> <span class="n">phi0</span><span class="o">+</span><span class="n">dphi</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">phi</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">phi0</span><span class="o">-</span><span class="n">dphi</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">phi0</span><span class="o">+</span><span class="n">dphi</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">:</span>
+        <span class="n">idx_phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi</span> <span class="o">&gt;=</span> <span class="n">phi0</span><span class="o">-</span><span class="n">dphi</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">phi</span> <span class="o">&lt;=</span> <span class="n">phi0</span><span class="o">+</span><span class="n">dphi</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">idx_phi</span> <span class="o">=</span> <span class="p">(</span><span class="n">phi</span> <span class="o">&gt;=</span> <span class="n">phi0</span><span class="o">-</span><span class="n">dphi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">phi</span> <span class="o">&lt;=</span> <span class="n">phi0</span><span class="o">+</span><span class="n">dphi</span><span class="p">)</span>
+    
+    <span class="n">idx_theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">theta</span> <span class="o">&gt;=</span> <span class="n">theta0</span><span class="o">-</span><span class="n">dtheta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">theta</span> <span class="o">&lt;=</span> <span class="n">theta0</span><span class="o">+</span><span class="n">dtheta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">idx_phi</span><span class="p">,</span> <span class="n">idx_theta</span>
+
+
+<div class="viewcode-block" id="signal_in_detector">
+<a class="viewcode-back" href="../../autoapi/quvac/postprocess/index.html#quvac.postprocess.signal_in_detector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">signal_in_detector</span><span class="p">(</span><span class="n">dN</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">align_to_max</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the signal detected within a specified detector region.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dN : numpy.ndarray</span>
+<span class="sd">        Differential angular photon spectrum on a spherical grid.</span>
+<span class="sd">    theta : numpy.ndarray</span>
+<span class="sd">        Array of polar angles (in radians) corresponding to the spherical grid.</span>
+<span class="sd">    phi : numpy.ndarray</span>
+<span class="sd">        Array of azimuthal angles (in radians) corresponding to the spherical grid.</span>
+<span class="sd">    detector : dict</span>
+<span class="sd">        Dictionary specifying the detector region. Required keys are:</span>
+<span class="sd">        - &#39;phi0&#39; : float</span>
+<span class="sd">            Central azimuthal angle of the detector (in degrees).</span>
+<span class="sd">        - &#39;theta0&#39; : float</span>
+<span class="sd">            Central polar angle of the detector (in degrees).</span>
+<span class="sd">        - &#39;dphi&#39; : float</span>
+<span class="sd">            Half-width of the azimuthal angle range (in degrees).</span>
+<span class="sd">        - &#39;dtheta&#39; : float</span>
+<span class="sd">            Half-width of the polar angle range (in degrees).</span>
+<span class="sd">    align_to_max : bool</span>
+<span class="sd">        Whether to align detector to the max spot in the detected region, by default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The total signal detected within the specified detector region.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The function integrates the signal over the specified detector region in spherical coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phi0</span><span class="p">,</span> <span class="n">theta0</span><span class="p">,</span> <span class="n">dphi</span><span class="p">,</span> <span class="n">dtheta</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">detector</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> 
+                                  <span class="ow">in</span> <span class="s2">&quot;phi0 theta0 dphi dtheta&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+    <span class="n">idx_phi</span><span class="p">,</span><span class="n">idx_theta</span> <span class="o">=</span> <span class="n">_get_detector_idx</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi0</span><span class="p">,</span> <span class="n">theta0</span><span class="p">,</span> <span class="n">dphi</span><span class="p">,</span> <span class="n">dtheta</span><span class="p">)</span>
+    
+    <span class="n">dN_det</span> <span class="o">=</span> <span class="n">dN</span><span class="p">[</span><span class="n">idx_theta</span><span class="p">][:,</span><span class="n">idx_phi</span><span class="p">]</span>
+    <span class="n">theta_det</span><span class="p">,</span> <span class="n">phi_det</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[</span><span class="n">idx_theta</span><span class="p">],</span> <span class="n">phi</span><span class="p">[</span><span class="n">idx_phi</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">align_to_max</span><span class="p">:</span>
+        <span class="n">max_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dN_det</span><span class="p">)</span>
+        <span class="n">theta_max</span><span class="p">,</span> <span class="n">phi_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">max_index</span><span class="p">,</span> <span class="n">dN_det</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">phi0_new</span><span class="p">,</span> <span class="n">theta0_new</span> <span class="o">=</span> <span class="n">phi_det</span><span class="p">[</span><span class="n">phi_max</span><span class="p">],</span> <span class="n">theta_det</span><span class="p">[</span><span class="n">theta_max</span><span class="p">]</span>
+        <span class="n">idx_phi</span><span class="p">,</span><span class="n">idx_theta</span> <span class="o">=</span> <span class="n">_get_detector_idx</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi0_new</span><span class="p">,</span> <span class="n">theta0_new</span><span class="p">,</span>
+                                              <span class="n">dphi</span><span class="p">,</span> <span class="n">dtheta</span><span class="p">)</span>
+        <span class="n">dN_det</span> <span class="o">=</span> <span class="n">dN</span><span class="p">[</span><span class="n">idx_theta</span><span class="p">][:,</span><span class="n">idx_phi</span><span class="p">]</span>
+        <span class="n">theta_det</span><span class="p">,</span> <span class="n">phi_det</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[</span><span class="n">idx_theta</span><span class="p">],</span> <span class="n">phi</span><span class="p">[</span><span class="n">idx_phi</span><span class="p">]</span>
+
+    <span class="n">N_detected</span> <span class="o">=</span> <span class="n">integrate_spherical</span><span class="p">(</span><span class="n">dN_det</span><span class="p">,</span> <span class="p">[</span><span class="n">theta_det</span><span class="p">,</span> <span class="n">phi_det</span><span class="p">],</span>
+                                     <span class="n">axs_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">,</span><span class="s1">&#39;phi&#39;</span><span class="p">],</span>
+                                     <span class="n">axs_integrate</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;theta&#39;</span><span class="p">,</span><span class="s1">&#39;phi&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">N_detected</span></div>
+
+    
+
 <div class="viewcode-block" id="get_simulation_fields">
 <a class="viewcode-back" href="../../autoapi/quvac/postprocess/index.html#quvac.postprocess.get_simulation_fields">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_simulation_fields</span><span class="p">(</span><span class="n">ini_file</span><span class="p">):</span>

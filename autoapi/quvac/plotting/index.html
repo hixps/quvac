@@ -289,10 +289,13 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#quvac.plotting.pi_formatter" title="quvac.plotting.pi_formatter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pi_formatter</span></code></a>(x, pos)</p></td>
 <td><p>Format axis ticks as multiples of pi.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.plotting.plot_mollweide" title="quvac.plotting.plot_mollweide"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_mollweide</span></code></a>(fig, ax, phi, theta, data[, cmap, norm])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.plotting.plot_roi" title="quvac.plotting.plot_roi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_roi</span></code></a>(ax, x0, y0, dx, dy, line_kwargs)</p></td>
+<td><p>Plot a rectangular region of interest (ROI) on a given axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#quvac.plotting.plot_mollweide" title="quvac.plotting.plot_mollweide"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_mollweide</span></code></a>(fig, ax, phi, theta, data[, cmap, norm])</p></td>
 <td><p>Plot data on a Mollweide projection.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#quvac.plotting.plot_fields" title="quvac.plotting.plot_fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_fields</span></code></a>(field, t[, plot_keys, cmap, cnorm, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.plotting.plot_fields" title="quvac.plotting.plot_fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_fields</span></code></a>(field, t[, plot_keys, cmap, cnorm, ...])</p></td>
 <td><p>Plot specified field components.</p></td>
 </tr>
 </tbody>
@@ -333,6 +336,32 @@
 <dd class="field-odd"><p>str</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="quvac.plotting.plot_roi">
+<span class="sig-prename descclassname"><span class="pre">quvac.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_roi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/quvac/plotting.html#plot_roi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quvac.plotting.plot_roi" title="Link to this definition">¶</a></dt>
+<dd><p>Plot a rectangular region of interest (ROI) on a given axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – The axis on which to plot the ROI.</p></li>
+<li><p><strong>x0</strong> (<em>float</em>) – The x-coordinate of the center of the ROI.</p></li>
+<li><p><strong>y0</strong> (<em>float</em>) – The y-coordinate of the center of the ROI.</p></li>
+<li><p><strong>dx</strong> (<em>float</em>) – Half the width of the ROI.</p></li>
+<li><p><strong>dy</strong> (<em>float</em>) – Half the height of the ROI.</p></li>
+<li><p><strong>line_kwargs</strong> (<em>dict</em>) – Keyword arguments to customize the appearance of the ROI lines (e.g., color, linestyle).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The axis with the plotted ROI.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.axes.Axes</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The ROI is represented as a rectangle centered at (x0, y0) with width 2*dx and height 2*dy.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -451,6 +480,7 @@
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li><a class="reference internal" href="#quvac.plotting.save_fig"><code class="docutils literal notranslate"><span class="pre">save_fig()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.plotting.pi_formatter"><code class="docutils literal notranslate"><span class="pre">pi_formatter()</span></code></a></li>
+<li><a class="reference internal" href="#quvac.plotting.plot_roi"><code class="docutils literal notranslate"><span class="pre">plot_roi()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.plotting.plot_mollweide"><code class="docutils literal notranslate"><span class="pre">plot_mollweide()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.plotting.plot_fields"><code class="docutils literal notranslate"><span class="pre">plot_fields()</span></code></a></li>
 </ul>

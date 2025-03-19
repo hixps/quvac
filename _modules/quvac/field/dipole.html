@@ -291,7 +291,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">c</span><span class="p">,</span> <span class="n">pi</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">quvac.field.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExplicitField</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">quvac.field.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_field_energy</span>
 
 
 <div class="viewcode-block" id="DipoleAnalytic">
@@ -396,12 +395,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks and adjusts the energy of the field.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">E</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_field</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">W</span> <span class="o">=</span> <span class="n">get_field_energy</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dV</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_energy</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="s2">&quot;W&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">d0</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">/</span> <span class="n">W</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">W_num</span> <span class="o">=</span> <span class="n">W</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">d0</span><span class="o">**</span><span class="mi">2</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">modify_energy</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">d0</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">W_correction</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_g</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
