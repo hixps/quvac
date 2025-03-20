@@ -55,7 +55,7 @@ def update_energies(ini_data, energy_params):
     
     # fix energy of remaining field
     idx_remain = list(set(fields) - set(opt_fields))[0]
-    W_remain = np.max(1. - W_total, 0.)
+    W_remain = np.maximum(1. - W_total, 0.)
     ini["fields"][f"field_{idx_remain}"]["W"] = float(W_remain * scale)
     return ini
 
