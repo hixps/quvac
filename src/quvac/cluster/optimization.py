@@ -36,7 +36,9 @@ def quvac_evaluation(params):
     ini_data = read_yaml(params["ini_default"])
     params.pop("ini_default")
     trial_idx = params.pop("trial_idx")
-    scales = ini_data.get("scales", {})
+
+    optimization_params = ini_data["optimization"]
+    scales = optimization_params.get("scales", {})
 
     # Create ini.yml file for current trial
     trial_str = str(trial_idx).zfill(3)
@@ -104,16 +106,17 @@ def parse_args():
     argparser.add_argument(
         "--output", "-o", default=None, help="Path to save simulation data to"
     )
-    argparser.add_argument(
-        "--optimization", default=None, help="Yaml file with optimization parameters"
-    )
+    # argparser.add_argument(
+    #     "--optimization", default=None, help="Yaml file with optimization parameters"
+    # )
     argparser.add_argument(
         "--wisdom", default="wisdom/fftw-wisdom", help="File to save pyfftw-wisdom"
     )
     return argparser.parse_args()
 
 
-def cluster_optimization(ini_file, optimization_file, save_path=None, wisdom_file=None):
+# def cluster_optimization(ini_file, optimization_file, save_path=None, wisdom_file=None):
+def cluster_optimization(ini_file, save_path=None, wisdom_file=None):
     """
     Launch optimization of quvac simulation for given default <ini>.yml file
     and <variables>.yml file
@@ -133,8 +136,9 @@ def cluster_optimization(ini_file, optimization_file, save_path=None, wisdom_fil
         Path to save simulation results to
     """
     # Check that ini file and save_path exists
-    err_msg = f"{ini_file} or {optimization_file} is not a file or does not exist"
-    assert os.path.isfile(ini_file) and os.path.isfile(optimization_file), err_msg
+    # err_msg = f"{ini_file} or {optimization_file} is not a file or does not exist"
+    # assert os.path.isfile(ini_file) and os.path.isfile(optimization_file), err_msg
+    assert os.path.isfile(ini_file), f"{ini_file} is not a file or does not exist"
     if save_path is None:
         save_path = os.path.dirname(ini_file)
     if not os.path.exists(save_path):
@@ -142,7 +146,8 @@ def cluster_optimization(ini_file, optimization_file, save_path=None, wisdom_fil
     experiment_file = os.path.join(save_path, "experiment.json")
 
     ini_default = read_yaml(ini_file)
-    optimization_params = read_yaml(optimization_file)
+    optimization_params = ini_default["optimization"]
+    # optimization_params = read_yaml(optimization_file)
     cluster_params = optimization_params.get("cluster", {})
 
     # Check that optimization parameters are only field_parameters
@@ -209,4 +214,4 @@ def gather_trials_data(ax_client, metric_names=["N_total", "N_disc"]):
 
 if __name__ == "__main__":
     args = parse_args()
-    cluster_optimization(args.input, args.optimization, args.output)
+    cluster_optimization(args.input, args.output)
