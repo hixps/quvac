@@ -138,7 +138,25 @@ def update_energies(ini_data, energy_params):
     return ini
 
 
-def quvac_evaluation(params):
+def collect_metrics(data, obj_params, metric_names=["N_total"]):
+    N_disc = data.get("N_disc", 0)
+    N_total = data.get("N_total", 0)
+
+    metrics = {}
+    metrics["N_total"] = (float(N_total), 0.0)
+    if N_disc is not None:
+        metrics["N_disc"] = (float(N_disc), 0.0)
+
+    if "detector" in obj_params:
+        N_detector = objective_signal_in_detector(data, obj_params)
+        metrics["N_detector"] = (float(N_detector), 0.0)
+
+    # filter metrics
+    metrics = {k:v for k,v in metrics.items() if k in metric_names}
+    return metrics
+
+
+def quvac_evaluation(params, metric_names=["N_total"]):
     """
     Evaluate a single trial of the quvac simulation.
 
@@ -190,20 +208,26 @@ def quvac_evaluation(params):
 
     # Load results
     data = np.load(os.path.join(save_path, "spectra_total.npz"))
-    N_disc = data.get("N_disc", 0)
-    N_total = data.get("N_total", 0)
+    metrics = collect_metrics(data, obj_params, metric_names)
+    # N_disc = data.get("N_disc", 0)
+    # N_total = data.get("N_total", 0)
 
-    metrics = {
-        "N_disc": (float(N_disc), 0.0),
-        "N_total": (float(N_total), 0.0),
-    }
-    if "detector" in obj_params:
-        N_detector = objective_signal_in_detector(data, obj_params)
-        metrics["N_detector"] = (float(N_detector), 0.0)
+    # metrics = {}
+    # metrics["N_total"] = (float(N_total), 0.0)
+    # if N_disc is not None:
+    #     metrics["N_disc"] = (float(N_disc), 0.0)
+    # # metrics = {
+    # #     "N_disc": (float(N_disc), 0.0),
+    # #     "N_total": (float(N_total), 0.0),
+    # # }
+    # if "detector" in obj_params:
+    #     N_detector = objective_signal_in_detector(data, obj_params)
+    #     metrics["N_detector"] = (float(N_detector), 0.0)
     return metrics
 
 
-def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experiment_file):
+def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experiment_file,
+                     metric_names=["N_total"]):
     """
     Run Bayesian optimization using Ax and Submitit.
 
@@ -243,7 +267,7 @@ def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experimen
         )
         for trial_idx, params in trial_index_to_param.items():
             params["trial_idx"] = trial_idx
-            job = executor.submit(quvac_evaluation, params)
+            job = executor.submit(quvac_evaluation, params, metric_names)
             submitted_jobs += 1
             jobs.append((job, trial_idx))
             time.sleep(1)
@@ -316,6 +340,10 @@ def cluster_optimization(ini_file, save_path=None, wisdom_file=None):
     # Set up optimization client
     ax_client = AxClient()
     objectives = optimization_params["objectives"]
+    track_metrics = optimization_params.get("track_metrics", [])
+    # collect metric names to keep track of
+    metric_names = [name for name, flag in objectives]
+    metric_names += track_metrics
 
     ax_client.create_experiment(
         name=optimization_params.get("name", "test_optimization"),
@@ -326,7 +354,8 @@ def cluster_optimization(ini_file, save_path=None, wisdom_file=None):
         parameter_constraints=optimization_params.get("parameter_constraints", None),
         outcome_constraints=optimization_params.get(
             "outcome_constraints", None
-        ),  # Optional.
+        ),
+        tracking_metric_names=track_metrics,
     )
 
     # Set up sibmitit AutoExecutor
@@ -344,7 +373,8 @@ def cluster_optimization(ini_file, save_path=None, wisdom_file=None):
 
     n_trials = optimization_params.get("n_trials", 10)
 
-    run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experiment_file)
+    run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experiment_file,
+                     metric_names)
     print("Optimization finished!")
 
 
