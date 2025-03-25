@@ -82,11 +82,15 @@ def objective_signal_in_detector(data, obj_params):
     float
         The signal detected within the specified detector region.
     """
-    detector = obj_params["detector"]
+    detectors = obj_params["detectors"]
+    detectors = [detectors] if isinstance(detectors, dict) else detectors
     k, theta, phi, N_sph = [data[key] for key in "k theta phi N_sph".split()]
     N_angular = integrate_spherical(N_sph, (k,theta,phi), axs_integrate=['k'])
-    N_detector = signal_in_detector(N_angular, theta, phi, detector,
-                                    align_to_max=False)
+
+    N_detector = 0
+    for detector in detectors:
+        N_detector += signal_in_detector(N_angular, theta, phi, detector,
+                                         align_to_max=False)
     return N_detector
 
 
