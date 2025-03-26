@@ -325,7 +325,7 @@ def setup_generation_strategy(num_random_trials=6):
     gs = GenerationStrategy(
         steps=[
             GenerationStep(model=Models.SOBOL, num_trials=num_random_trials),
-            GenerationStep(model=Models.GPEI),
+            GenerationStep(model=Models.GPEI, num_trials=-1),
         ]
     )
     return gs
