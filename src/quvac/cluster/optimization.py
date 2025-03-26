@@ -13,6 +13,7 @@ Usage:
 """
 import os
 import time
+import warnings
 from pathlib import Path
 from copy import deepcopy
 
@@ -24,6 +25,12 @@ from quvac.cluster.config import DEFAULT_SUBMITIT_PARAMS
 from quvac.postprocess import signal_in_detector, integrate_spherical
 from quvac.simulation import quvac_simulation, parse_args
 from quvac.utils import read_yaml, write_yaml
+
+
+class StopOptimization(BaseException):
+    '''
+    Exception when optimization is forcefully stopped.
+    '''
 
 
 def prepare_params_for_ax(params, ini_file):
@@ -134,6 +141,12 @@ def update_energies(ini_data, energy_params):
         ini["fields"][category][key] = float(param * scale)
         W_total += param
     
+    eps = 1.0 - W_total
+    if eps < 0 and not np.isclose(abs(eps), 0.0, atol=1e-5):
+        raise StopOptimization("Fixed total energy budget constraint is violated!"
+                               "Probably, optimization fails to find new prospective points and"
+                               "is stuck in local minima.")
+    
     # fix energy of remaining field
     idx_remain = list(set(fields) - set(opt_fields))[0]
     W_remain = np.maximum(1. - W_total, 0.)
@@ -217,8 +230,15 @@ def quvac_evaluation(params, metric_names=["N_total"]):
             energy_params[param_key] = param
 
     # treat separately energy distribution parameters
-    if energy_params:        
-        ini_data = update_energies(ini_data, energy_params)
+    if energy_params:
+        try:      
+            ini_data = update_energies(ini_data, energy_params)
+        except StopOptimization as e:
+            warnings.warn("Fixed total energy budget constraint is violated!"
+                          "Probably, optimization fails to find new prospective points and"
+                          "is stuck in local minima.")
+            warnings.warn("Terminating optimization...")
+            return None
 
     # Save ini file
     ini_path = os.path.join(save_path, "ini.yml")
@@ -267,6 +287,9 @@ def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experimen
             # Local and debug jobs don't run until .result() is called.
             if job.done() or type(job) in [LocalJob, DebugJob]:
                 result = job.result()
+                # terminate optimization if some violation is encountered
+                if result is None:
+                    break
                 ax_client.complete_trial(trial_index=trial_idx, raw_data=result)
                 jobs.remove((job, trial_idx))
                 ax_client.save_to_json_file(experiment_file)
