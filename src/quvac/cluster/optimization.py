@@ -245,12 +245,12 @@ def check_sampled_trials(trial_index_to_param):
     '''
     continue_optimization = True
     for trial_idx, params in trial_index_to_param.items():
-        params.pop("ini_default")
         energies = []
         for param_key, param in params.items():
-            category, key = param_key.split(":")
-            if key == "W":
-                energies.append(param)
+            if param_key != "ini_default":
+                category, key = param_key.split(":")
+                if key == "W":
+                    energies.append(param)
         
         W_total = np.sum(energies)
         eps = 1.0 - W_total
