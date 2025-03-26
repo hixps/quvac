@@ -29,12 +29,6 @@ from quvac.simulation import quvac_simulation, parse_args
 from quvac.utils import read_yaml, write_yaml
 
 
-class StopOptimization(BaseException):
-    '''
-    Exception when optimization is forcefully stopped.
-    '''
-
-
 def prepare_params_for_ax(params, ini_file):
     """
     Prepare parameters for Ax optimization.
@@ -143,12 +137,6 @@ def update_energies(ini_data, energy_params):
         ini["fields"][category][key] = float(param * scale)
         W_total += param
     
-    eps = 1.0 - W_total
-    if eps < 0 and not np.isclose(abs(eps), 0.0, atol=1e-5):
-        raise StopOptimization("Fixed total energy budget constraint is violated!"
-                               "Probably, optimization fails to find new prospective points and"
-                               "is stuck in local minima.")
-    
     # fix energy of remaining field
     idx_remain = list(set(fields) - set(opt_fields))[0]
     W_remain = np.maximum(1. - W_total, 0.)
@@ -232,15 +220,8 @@ def quvac_evaluation(params, metric_names=["N_total"]):
             energy_params[param_key] = param
 
     # treat separately energy distribution parameters
-    if energy_params:
-        try:      
-            ini_data = update_energies(ini_data, energy_params)
-        except StopOptimization as e:
-            warnings.warn("Fixed total energy budget constraint is violated!"
-                          "Probably, optimization fails to find new prospective points and"
-                          "is stuck in local minima.")
-            warnings.warn("Terminating optimization...")
-            return None
+    if energy_params:     
+        ini_data = update_energies(ini_data, energy_params)
 
     # Save ini file
     ini_path = os.path.join(save_path, "ini.yml")
@@ -254,6 +235,31 @@ def quvac_evaluation(params, metric_names=["N_total"]):
     data = np.load(os.path.join(save_path, "spectra_total.npz"))
     metrics = collect_metrics(data, obj_params, metric_names)
     return metrics
+
+
+def check_sampled_trials(trial_index_to_param):
+    '''
+    Check if the sampled trials are valid.
+
+    Currently only checks if the total energy budget constraint is satisfied.
+    '''
+    continue_optimization = True
+    for trial_idx, params in trial_index_to_param.items():
+        energies = []
+        for param_key, param in params.items():
+            category, key = param_key.split(":")
+            if key == "W":
+                energies.append(param)
+        
+        W_total = np.sum(energies)
+        eps = 1.0 - W_total
+        if eps < 0 and not np.isclose(abs(eps), 0.0, atol=1e-5):
+            warnings.warn("Fixed total energy budget constraint is violated!"
+                          "Probably, optimization fails to find new prospective points and"
+                          "is stuck in local minima.")
+            continue_optimization = False
+            break
+    return continue_optimization
 
 
 def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experiment_file,
@@ -300,12 +306,17 @@ def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experimen
         trial_index_to_param, _ = ax_client.get_next_trials(
             max_trials=min(max_parallel_jobs - len(jobs), n_trials - submitted_jobs)
         )
-        for trial_idx, params in trial_index_to_param.items():
-            params["trial_idx"] = trial_idx
-            job = executor.submit(quvac_evaluation, params, metric_names)
-            submitted_jobs += 1
-            jobs.append((job, trial_idx))
-            time.sleep(1)
+        continue_optimization = check_sampled_trials(trial_index_to_param)
+        if continue_optimization:
+            for trial_idx, params in trial_index_to_param.items():
+                params["trial_idx"] = trial_idx
+                job = executor.submit(quvac_evaluation, params, metric_names)
+                submitted_jobs += 1
+                jobs.append((job, trial_idx))
+                time.sleep(1)
+        else:
+            warnings.warn("Terminating optimization...")
+            break
 
 
 def setup_generation_strategy(num_random_trials=6):
