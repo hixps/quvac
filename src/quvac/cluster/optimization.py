@@ -448,7 +448,8 @@ def gather_trials_data(ax_client, metric_names=["N_total", "N_disc"]):
     """
     metrics = ax_client.experiment.fetch_data().df
     trials = ax_client.experiment.trials
-    trials_params = {key: trial.arm.parameters for key, trial in trials.items()}
+    trials_params = {key: trial.arm.parameters for key, trial in trials.items()
+                     if trial.completed_successfully}
     for key in trials_params:
         for metric_name in metric_names:
             condition = (metrics["metric_name"] == metric_name) & (
