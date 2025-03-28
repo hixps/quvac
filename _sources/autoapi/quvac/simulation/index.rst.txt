@@ -21,6 +21,7 @@ Functions
 
 .. autoapisummary::
 
+   quvac.simulation.parse_args
    quvac.simulation.check_dirs
    quvac.simulation.get_filenames
    quvac.simulation.get_dirs
@@ -32,6 +33,14 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:function:: parse_args(description='Calculate quantum vacuum signal for given external fields.')
+
+   Parse command-line arguments.
+
+   :returns: Parsed command-line arguments.
+   :rtype: argparse.Namespace
+
 
 .. py:function:: check_dirs(ini_file, save_path)
 

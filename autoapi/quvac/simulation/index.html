@@ -288,25 +288,28 @@ and measure performance.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.simulation.check_dirs" title="quvac.simulation.check_dirs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_dirs</span></code></a>(ini_file, save_path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.simulation.parse_args" title="quvac.simulation.parse_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_args</span></code></a>([description])</p></td>
+<td><p>Parse command-line arguments.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#quvac.simulation.check_dirs" title="quvac.simulation.check_dirs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_dirs</span></code></a>(ini_file, save_path)</p></td>
 <td><p>Check if directories exist and create them if necessary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#quvac.simulation.get_filenames" title="quvac.simulation.get_filenames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_filenames</span></code></a>(ini_file, save_path, wisdom_file)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.simulation.get_filenames" title="quvac.simulation.get_filenames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_filenames</span></code></a>(ini_file, save_path, wisdom_file)</p></td>
 <td><p>Get filenames for saving simulation data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.simulation.get_dirs" title="quvac.simulation.get_dirs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_dirs</span></code></a>(ini_file, save_path, wisdom_file)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#quvac.simulation.get_dirs" title="quvac.simulation.get_dirs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_dirs</span></code></a>(ini_file, save_path, wisdom_file)</p></td>
 <td><p>Get directories for saving simulation data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#quvac.simulation.set_precision" title="quvac.simulation.set_precision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_precision</span></code></a>(precision)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.simulation.set_precision" title="quvac.simulation.set_precision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_precision</span></code></a>(precision)</p></td>
 <td><p>Set global precision for calculations.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.simulation.run_simulation" title="quvac.simulation.run_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_simulation</span></code></a>(ini_config, fields_params, files, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#quvac.simulation.run_simulation" title="quvac.simulation.run_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_simulation</span></code></a>(ini_config, fields_params, files, ...)</p></td>
 <td><p>Run the vacuum emission simulation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#quvac.simulation.postprocess_simulation" title="quvac.simulation.postprocess_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">postprocess_simulation</span></code></a>(ini_config, files, fields_params)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.simulation.postprocess_simulation" title="quvac.simulation.postprocess_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">postprocess_simulation</span></code></a>(ini_config, files, fields_params)</p></td>
 <td><p>Perform postprocessing on the simulation data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#quvac.simulation.quvac_simulation" title="quvac.simulation.quvac_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quvac_simulation</span></code></a>(ini_file[, save_path, wisdom_file])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#quvac.simulation.quvac_simulation" title="quvac.simulation.quvac_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quvac_simulation</span></code></a>(ini_file[, save_path, wisdom_file])</p></td>
 <td><p>Launch a single quvac simulation for given &lt;ini&gt;.yaml file.</p></td>
 </tr>
 </tbody>
@@ -315,6 +318,20 @@ and measure performance.</p>
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="quvac.simulation.parse_args">
+<span class="sig-prename descclassname"><span class="pre">quvac.simulation.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Calculate</span> <span class="pre">quantum</span> <span class="pre">vacuum</span> <span class="pre">signal</span> <span class="pre">for</span> <span class="pre">given</span> <span class="pre">external</span> <span class="pre">fields.'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/quvac/simulation.html#parse_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quvac.simulation.parse_args" title="Link to this definition">¶</a></dt>
+<dd><p>Parse command-line arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Parsed command-line arguments.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>argparse.Namespace</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="quvac.simulation.check_dirs">
 <span class="sig-prename descclassname"><span class="pre">quvac.simulation.</span></span><span class="sig-name descname"><span class="pre">check_dirs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ini_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/quvac/simulation.html#check_dirs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quvac.simulation.check_dirs" title="Link to this definition">¶</a></dt>
@@ -503,6 +520,7 @@ and measure performance.</p>
 <li><a class="reference internal" href="#">quvac.simulation</a><ul>
 <li><a class="reference internal" href="#functions">Functions</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li><a class="reference internal" href="#quvac.simulation.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.simulation.check_dirs"><code class="docutils literal notranslate"><span class="pre">check_dirs()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.simulation.get_filenames"><code class="docutils literal notranslate"><span class="pre">get_filenames()</span></code></a></li>
 <li><a class="reference internal" href="#quvac.simulation.get_dirs"><code class="docutils literal notranslate"><span class="pre">get_dirs()</span></code></a></li>

@@ -282,7 +282,6 @@
 <span class="sd">    python simulation_parallel.py -i &lt;input&gt;.yaml -o &lt;output_dir&gt; </span>
 <span class="sd">    --wisdom &lt;wisdom_file&gt;</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
@@ -296,7 +295,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">quvac.grid</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_grids</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">quvac.log</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">get_parallel_performance_stats</span><span class="p">,</span>
                        <span class="n">simulation_end_str</span><span class="p">,</span> <span class="n">simulation_start_str</span><span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">quvac.simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_dirs</span><span class="p">,</span> <span class="n">quvac_simulation</span><span class="p">,</span> <span class="n">postprocess_simulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quvac.simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_dirs</span><span class="p">,</span> <span class="n">quvac_simulation</span><span class="p">,</span> <span class="n">parse_args</span><span class="p">,</span> <span class="n">postprocess_simulation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">quvac.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_yaml</span><span class="p">,</span> <span class="n">write_yaml</span><span class="p">,</span> <span class="n">get_maxrss</span>
 
 <span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;simulation&quot;</span><span class="p">)</span>
@@ -386,29 +385,6 @@
     <span class="n">amplitude_total</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="n">z</span><span class="p">,</span> <span class="s2">&quot;S1&quot;</span><span class="p">:</span> <span class="n">S1</span><span class="p">,</span> <span class="s2">&quot;S2&quot;</span><span class="p">:</span> <span class="n">S2</span><span class="p">}</span>
     <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">amplitudes_file</span><span class="p">,</span> <span class="o">**</span><span class="n">amplitude_total</span><span class="p">)</span></div>
 
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_parse_args</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Parse command-line arguments.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    argparse.Namespace</span>
-<span class="sd">        Parsed command-line arguments.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Calculate quantum vacuum signal for given external fields&quot;</span>
-    <span class="n">argparser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
-    <span class="n">argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--input&quot;</span><span class="p">,</span> <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input yaml file with field and grid params&quot;</span>
-    <span class="p">)</span>
-    <span class="n">argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--output&quot;</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to save simulation data to&quot;</span>
-    <span class="p">)</span>
-    <span class="n">argparser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--wisdom&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;wisdom/fftw-wisdom&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;File to save pyfftw-wisdom&quot;</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="n">argparser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 
 
 <div class="viewcode-block" id="quvac_simulation_parallel">
@@ -530,7 +506,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="n">args</span> <span class="o">=</span> <span class="n">_parse_args</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
     <span class="n">quvac_simulation_parallel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">wisdom</span><span class="p">)</span>
 </pre></div>
         </article>

@@ -23,6 +23,7 @@ Functions
    quvac.utils.get_maxrss
    quvac.utils.zip_directory_shutil
    quvac.utils.find_classes_in_package
+   quvac.utils.round_to_n
 
 
 Module Contents
@@ -122,4 +123,6 @@ Module Contents
    :returns: List of class names in the package.
    :rtype: list of str
 
+
+.. py:function:: round_to_n(x, n)
 
