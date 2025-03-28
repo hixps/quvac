@@ -322,7 +322,7 @@ def check_repeated_samples(trial_index_to_param, last_samples, fail_count, patie
         if fail_count >= patience:
             warnings.warn(f"Number of repeated samples exceeded patience ({patience} tries)!")
             continue_sampling = False
-    return continue_sampling, last_samples, fail_count
+    return continue_sampling, fail_count
 
 
 def check_sampled_trials(trial_index_to_param, last_samples, fail_count):
@@ -354,10 +354,10 @@ def check_sampled_trials(trial_index_to_param, last_samples, fail_count):
     If either condition fails, the optimization process is terminated.
     """
     energy_ok = check_energy_constraint(trial_index_to_param)
-    continue_sampling, last_samples, fail_count = check_repeated_samples(trial_index_to_param, last_samples, fail_count)
+    continue_sampling, fail_count = check_repeated_samples(trial_index_to_param, last_samples, fail_count)
 
     continue_optimization = energy_ok and continue_sampling
-    return continue_optimization, last_samples, fail_count
+    return continue_optimization, fail_count
 
 
 def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experiment_file,
@@ -409,9 +409,11 @@ def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experimen
             )
             # Check that sampled trials satisfy the requirements
             if trial_index_to_param:
-                continue_optimization, last_samples, fail_count = check_sampled_trials(trial_index_to_param,
-                                                                                    last_samples,
-                                                                                    fail_count)
+                print("I'm here!")
+                print(trial_index_to_param)
+                continue_optimization, fail_count = check_sampled_trials(trial_index_to_param,
+                                                                         last_samples,
+                                                                         fail_count)
                 print(last_samples)
 
                 if continue_optimization:
