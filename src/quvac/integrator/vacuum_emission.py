@@ -206,7 +206,7 @@ class VacuumEmission:
                 self.tmp_fftw[i].execute()
 
                 U_res = ne.evaluate(
-                    f"U_acc + U*prefactor*dt*dV",
+                    "U_acc + U*prefactor*dt*dV",
                     global_dict={
                         "U_acc": U_acc,
                         "U": self.tmp[i],
@@ -223,7 +223,7 @@ class VacuumEmission:
         """
         self.dt = t_grid[1] - t_grid[0]
         if integration_method == "trapezoid":
-            end_pts = (0, len(t_grid) - 1)
+            # end_pts = (0, len(t_grid) - 1)
             for i, t in enumerate(t_grid):
                 # weight = 0.5 if i in end_pts else 1.
                 weight = 1
@@ -253,7 +253,7 @@ class VacuumEmission:
 
         # Results should be in U1_acc and U2_acc
         dims = 1 / BS**3 * m_e**2 * c**3 / hbar**2
-        prefactor = -1j * np.sqrt(alpha * self.kabs) / (2 * pi) ** 1.5 / 45 * dims
+        prefactor = -1j * np.sqrt(alpha * self.kabs) / (2 * pi) ** 1.5 / 45 * dims # noqa: F841
         # Next time need to be careful with f-strings and brackets
         self.S1 = ne.evaluate(
             f"prefactor * ({self.I_11_expr} - {self.I_22_expr})",

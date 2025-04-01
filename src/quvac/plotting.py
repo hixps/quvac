@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 import numpy as np
-from scipy.constants import c, pi
+from scipy.constants import pi
 
 try:
     import matplotlib.pyplot as plt
@@ -190,7 +190,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
     nx, ny, nz = Nxyz
     x, y, z = [ax*1e6 for ax in field.grid_xyz.grid]
 
-    I = (E[0]**2 + E[1]**2 + E[2]**2 + B[0]**2 + B[1]**2 + B[2]**2)/2
+    intensity = (E[0]**2 + E[1]**2 + E[2]**2 + B[0]**2 + B[1]**2 + B[2]**2)/2
     field_comps = {
         "Ex": E[0],
         "Ey": E[1],
@@ -198,7 +198,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
         "Bx": B[0],
         "By": B[1],
         "Bz": B[2],
-        "Intensity": I,
+        "Intensity": intensity,
     }
 
     plot_keys = plot_keys if plot_keys is not None else field_comps.keys()
@@ -206,7 +206,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
     n_rows = len(plot_keys)
     n_cols = 2
 
-    fig = plt.figure(figsize=(12, 5*n_rows), layout="constrained")
+    plt.figure(figsize=(12, 5*n_rows), layout="constrained")
     for i,key in enumerate(plot_keys):
         if key == "Intensity":
             cmap = "inferno"
@@ -239,7 +239,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
     axs = [x, y, z]
     axs_names = ["x", "y", "z"]
 
-    fig = plt.figure(figsize=(18, 5*n_rows), layout="constrained")
+    plt.figure(figsize=(18, 5*n_rows), layout="constrained")
     for i,key in enumerate(plot_keys):
         comp = field_comps[key]
         slices = [comp[:, ny//2, nz//2],

@@ -336,7 +336,7 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file="wisdom/fftw-wisdom")
         filemode="w",
         encoding="utf-8",
         level=logging.DEBUG,
-        format=f"%(message)s",
+        format="%(message)s",
     )
 
     # Start time

@@ -107,8 +107,8 @@ class GridXYZ:
             self.kx, self.ky, self.kz, indexing="ij", sparse=True
         )
         kx, ky, kz = self.kmeshgrid
-        self.kabs = kabs = ne.evaluate("sqrt(kx**2 + ky**2 + kz**2)")
-        kperp = ne.evaluate("sqrt(kx**2 + ky**2)")
+        self.kabs = kabs = ne.evaluate("sqrt(kx**2 + ky**2 + kz**2)") # noqa: F841
+        kperp = ne.evaluate("sqrt(kx**2 + ky**2)") # noqa: F841
 
         # Polarization vectors
         self.e1x = ne.evaluate("where((kx==0) & (ky==0), 1, kx * kz / (kperp*kabs))")

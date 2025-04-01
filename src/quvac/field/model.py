@@ -14,8 +14,7 @@ and infinite transverse extend in others. Adapted from [1]_.
 """
 
 import numexpr as ne
-import numpy as np
-from scipy.constants import c, pi
+from scipy.constants import pi
 
 from quvac.field.abc import Field
 from quvac import config

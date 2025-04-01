@@ -13,7 +13,7 @@ Currently supports:
 3. Discernible signal.
 4. Background field spectra.
 """
-
+# ruff: noqa: F841
 import logging
 import os
 import warnings

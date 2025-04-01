@@ -11,9 +11,8 @@ configuration by compining several focused fields.
     A Way to Lower the Threshold of e+ e-Pair Production from Vacuum." 
     PRL 104.22 (2010): 220404.
 """
-
+# ruff: noqa: F841
 from copy import deepcopy
-import warnings
 
 import numexpr as ne
 import numpy as np

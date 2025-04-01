@@ -1,3 +1,4 @@
+# ruff: noqa: F401
 import quvac.field
 import quvac.integrator
 import quvac.analytic_scalings

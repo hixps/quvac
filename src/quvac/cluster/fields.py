@@ -6,7 +6,6 @@ import argparse
 from copy import deepcopy
 import gc
 import os
-import time
 from pathlib import Path
 
 from quvac.field.external_field import ExternalField

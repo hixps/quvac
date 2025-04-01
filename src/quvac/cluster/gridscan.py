@@ -215,7 +215,7 @@ def cluster_gridscan(ini_file, save_path=None, wisdom_file=None):
     print("Jobs submitted, waiting for results...")
 
     # Wait till all jobs end
-    outputs = [job.result() for job in jobs]
+    _ = [job.result() for job in jobs]
     print("Grid scan is finished!")
 
 

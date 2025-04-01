@@ -290,10 +290,10 @@ class ExplicitField(Field):
         Efx, Efy, Efz = self.Ef
 
         self.a1 = ne.evaluate(
-            f"dV * (e1x*Efx + e1y*Efy + e1z*Efz)", global_dict=self.__dict__
+            "dV * (e1x*Efx + e1y*Efy + e1z*Efz)", global_dict=self.__dict__
         )
         self.a2 = ne.evaluate(
-            f"dV * (e2x*Efx + e2y*Efy + e2z*Efz)", global_dict=self.__dict__
+            "dV * (e2x*Efx + e2y*Efy + e2z*Efz)", global_dict=self.__dict__
         )
 
         self._check_energy_kspace()

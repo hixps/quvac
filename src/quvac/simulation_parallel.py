@@ -137,7 +137,6 @@ def quvac_simulation_parallel(
     ini_config = read_yaml(ini_file)
     # One can choose either to perform just simulation, just postprocess or both
     mode = ini_config.get('mode', 'simulation_postprocess')
-    do_simulation = 'simulation' in mode
     do_postprocess = 'postprocess' in mode
 
     # Setup logger
@@ -146,7 +145,7 @@ def quvac_simulation_parallel(
         filemode="w",
         encoding="utf-8",
         level=logging.DEBUG,
-        format=f"%(message)s",
+        format="%(message)s",
     )
 
     # Start time
@@ -189,7 +188,7 @@ def quvac_simulation_parallel(
     _logger.info("MILESTONE: Jobs submitted, waiting for results...")
 
     # Wait till all jobs end
-    outputs = [job.result() for job in jobs]
+    _ = [job.result() for job in jobs]
     _logger.info("MILESTONE: Jobs are finished")
 
     # Collect all results

@@ -18,9 +18,9 @@ from pathlib import Path
 from copy import deepcopy
 
 import numpy as np
-from ax.service.ax_client import AxClient, ObjectiveProperties
-from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
-from ax.modelbridge.registry import Models
+from ax.service.ax_client import AxClient, ObjectiveProperties # type: ignore
+from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy # type: ignore
+from ax.modelbridge.registry import Models # type: ignore
 from submitit import AutoExecutor, DebugJob, LocalJob
 
 from quvac.cluster.config import DEFAULT_SUBMITIT_PARAMS

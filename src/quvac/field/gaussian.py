@@ -8,7 +8,6 @@ Analytic expression for paraxial gaussian (0-order and higher-orders).
 """
 
 import numexpr as ne
-import numpy as np
 from scipy.constants import c, pi
 
 from quvac.field.abc import ExplicitField
@@ -179,7 +178,7 @@ class GaussianAnalytic(ExplicitField):
         """
         Calculates the electric and magnetic fields at a given time step.
         """
-        k = 2.0 * pi / self.lam
+        k = 2.0 * pi / self.lam # noqa: F841
         self.psi_plane = ne.evaluate("(omega*(t-t0) - k*z)", global_dict=self.__dict__)
         self.phase = "(phase_no_t + psi_plane)"
 
