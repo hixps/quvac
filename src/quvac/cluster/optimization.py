@@ -148,7 +148,7 @@ def update_energies(ini_data, energy_params):
     return ini
 
 
-def collect_metrics(data, obj_params, metric_names=["N_total"]):
+def collect_metrics(data, obj_params, metric_names=("N_total")):
     """
     Collect metrics from simulation results.
 
@@ -159,7 +159,7 @@ def collect_metrics(data, obj_params, metric_names=["N_total"]):
     obj_params : dict
         Dictionary containing objective parameters.
     metric_names : list of str, optional
-        List of metric names to collect. Default is ["N_total"].
+        List of metric names to collect. Default is ("N_total").
 
     Returns
     -------
@@ -183,7 +183,7 @@ def collect_metrics(data, obj_params, metric_names=["N_total"]):
     return metrics
 
 
-def quvac_evaluation(params, metric_names=["N_total"]):
+def quvac_evaluation(params, metric_names=("N_total")):
     """
     Evaluate a single trial of the quvac simulation.
 
@@ -192,7 +192,7 @@ def quvac_evaluation(params, metric_names=["N_total"]):
     params : dict
         Dictionary containing trial parameters.
     metric_names : list of str, optional
-        List of metric names to evaluate. Default is ["N_total"].
+        List of metric names to evaluate. Default is ("N_total").
 
     Returns
     -------
@@ -264,7 +264,7 @@ def check_energy_constraint(trial_index_to_param):
         If the total energy budget constraint is violated for any trial.
     """
     energy_ok = True
-    for trial_idx, params in trial_index_to_param.items():
+    for _, params in trial_index_to_param.items():
         energies = []
         for param_key, param in params.items():
             if param_key != "ini_default":
@@ -277,7 +277,7 @@ def check_energy_constraint(trial_index_to_param):
         if eps < 0 and not np.isclose(abs(eps), 0.0, atol=1e-5):
             warnings.warn("Fixed total energy budget constraint is violated! "
                           "Probably, optimization fails to find new prospective points "
-                          "and is stuck in local minima.")
+                          "and is stuck in local minima.", stacklevel=2)
             energy_ok = False
             break
     return energy_ok
@@ -314,7 +314,7 @@ def check_repeated_samples(trial_index_to_param, last_samples, fail_count, patie
     """
     continue_sampling = True
     trials = deepcopy(trial_index_to_param)
-    for trial_idx, params in trials.items():
+    for _, params in trials.items():
         params.pop("ini_default")
         # round-up ints and floats for comparison
         params_list = []
@@ -328,7 +328,7 @@ def check_repeated_samples(trial_index_to_param, last_samples, fail_count, patie
         if last_samples and params_tuple == last_samples[-1]:
             fail_count += 1
             warnings.warn(f"Trial {len(last_samples)-1} is identical to previous: "
-                          f"{params}. Fail count: {fail_count}")
+                          f"{params}. Fail count: {fail_count}", stacklevel=2)
         else:
             fail_count = 0
         
@@ -336,7 +336,7 @@ def check_repeated_samples(trial_index_to_param, last_samples, fail_count, patie
 
         if fail_count >= patience:
             warnings.warn(f"Number of repeated samples exceeded patience ({patience} "
-                          "tries)!")
+                          "tries)!", stacklevel=2)
             continue_sampling = False
     return continue_sampling, fail_count
 
@@ -378,7 +378,7 @@ def check_sampled_trials(trial_index_to_param, last_samples, fail_count):
 
 
 def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experiment_file,
-                     metric_names=["N_total"]):
+                     metric_names=("N_total")):
     """
     Run Bayesian optimization using Ax and Submitit.
 
@@ -395,7 +395,7 @@ def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experimen
     experiment_file : str
         Path to save the Ax experiment data.
     metric_names : list of str, optional
-        List of metric names to evaluate. Default is ["N_total"].
+        List of metric names to evaluate. Default is ("N_total").
 
     Returns
     -------
@@ -439,7 +439,7 @@ def run_optimization(ax_client, executor, n_trials, max_parallel_jobs, experimen
                         time.sleep(1)
                 else:
                     warnings.warn("Terminating optimization... Finishing last "
-                                  "trials...")
+                                  "trials...", stacklevel=2)
                 
 
 def setup_generation_strategy(num_random_trials=6):
@@ -554,7 +554,7 @@ def cluster_optimization(ini_file, save_path=None, wisdom_file=None):
     print("Optimization finished!")
 
 
-def gather_trials_data(ax_client, metric_names=["N_total", "N_disc"]):
+def gather_trials_data(ax_client, metric_names=("N_total", "N_disc")):
     """
     Gather data from completed trials in the Ax experiment.
 
@@ -564,7 +564,7 @@ def gather_trials_data(ax_client, metric_names=["N_total", "N_disc"]):
         Ax client managing the optimization process.
     metric_names : list of str, optional
         List of metric names to extract from the trials. Default is 
-        ["N_total", "N_disc"].
+        ("N_total", "N_disc").
 
     Returns
     -------

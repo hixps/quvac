@@ -199,7 +199,7 @@ class VacuumEmission:
         ne.evaluate(
             "exp(1j*kabs*c*t)", local_dict=self.prefactor_dict, out=self.prefactor
         )
-        for U_key, U_expr in zip(["U1_acc", "U2_acc"], [self.U1, self.U2]):
+        for U_key, U_expr in zip(["U1_acc", "U2_acc"], [self.U1, self.U2]): # noqa: B905
             for i, expr in enumerate(U_expr):
                 U_acc = getattr(self, U_key)[i]
                 ne.evaluate(expr, global_dict=self.U_dict, out=self.tmp[i])
@@ -224,7 +224,7 @@ class VacuumEmission:
         self.dt = t_grid[1] - t_grid[0]
         if integration_method == "trapezoid":
             # end_pts = (0, len(t_grid) - 1)
-            for i, t in enumerate(t_grid):
+            for _, t in enumerate(t_grid):
                 # weight = 0.5 if i in end_pts else 1.
                 weight = 1
                 self.calculate_one_time_step(t, weight=weight)

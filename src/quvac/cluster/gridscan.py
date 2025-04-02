@@ -134,7 +134,7 @@ def create_ini_files_for_gridscan(ini_default, param_names, param_grids, save_pa
     for parametrization in itertools.product(*param_grids):
         ini_current = deepcopy(ini_default)
         name_local = ""
-        for name, param in zip(param_names, parametrization):
+        for name, param in zip(param_names, parametrization, strict=True):
             category, param_name = name
             if category.startswith("field"):
                 ini_current["fields"][category][param_name] = float(param)

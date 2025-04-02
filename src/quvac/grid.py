@@ -511,7 +511,7 @@ def create_dynamic_grid(fields_params, grid_params):
     Nxyz_ = get_xyz_size(fields_params, box_size)
     res = grid_params["spatial_resolution"]
     if isinstance(res, Iterable):
-        Nxyz = [Nx * res for Nx, res in zip(Nxyz_, res)]
+        Nxyz = [Nx * res for Nx, res in zip(Nxyz_, res, strict=True)]
     elif type(res) in (int, float):
         Nxyz = [Nx * res for Nx in Nxyz_]
     grid_params["Nxyz"] = Nxyz

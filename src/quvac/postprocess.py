@@ -100,7 +100,7 @@ def xyz2idx(xyz, xyz_grid):
     """
     nx, ny, nz = xyz[0].shape
     idxs = np.empty((3, nx, ny, nz))
-    for i, (x, grid) in enumerate(zip(xyz, xyz_grid)):
+    for i, (x, grid) in enumerate(zip(xyz, xyz_grid, strict=True)):
         x0, x1 = grid[0], grid[-1]
         idxs[i] = (x - x0) / (x1 - x0) * (len(grid) - 1)
     return idxs
@@ -164,8 +164,8 @@ def cartesian_to_spherical_array(
     return spherical_grid, arr_sph
 
 
-def integrate_spherical(arr, axs, axs_names=["k", "theta", "phi"],
-                        axs_integrate=["k", "theta", "phi"]):
+def integrate_spherical(arr, axs, axs_names=("k", "theta", "phi"),
+                        axs_integrate=("k", "theta", "phi")):
     """
     Integrate an array over spherical coordinates.
 
@@ -618,7 +618,7 @@ class VacuumEmissionAnalyzer:
                 warn_message = sph_interp_warn.format(
                     total_key, getattr(self, total_key), N_total
                 )
-                warnings.warn(warn_message)
+                warnings.warn(warn_message, stacklevel=2)
                 _logger.warning(warn_message)
 
         self.spherical_grid = self.k, self.theta, self.phi = spherical_grid

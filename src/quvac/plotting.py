@@ -100,7 +100,7 @@ def plot_roi(ax, x0, y0, dx, dy, line_kwargs):
     y_top, y_bottom = y0-dy, y0+dy
     pts = [(x_right,y_top),(x_left,y_top),(x_left,y_bottom),
            (x_right,y_bottom),(x_right,y_top)]
-    for pt1,pt2 in zip(pts[:-1],pts[1:]):
+    for pt1,pt2 in zip(pts[:-1],pts[1:],strict=True):
         ax.plot([pt1[0],pt2[0]], [pt1[1],pt2[1]], **line_kwargs)
     return ax
 

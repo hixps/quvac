@@ -150,7 +150,7 @@ class Field(ABC):
 
         out_dtype = config.FDTYPE if mode == "real" else config.CDTYPE
         # Transform to the original coordinate frame
-        for i, (Ei, Bi) in enumerate(zip(E_out, B_out)):
+        for i, (Ei, Bi) in enumerate(zip(E_out, B_out, strict=2)):
             mx, my, mz = self.rotation_m[i, :]
             Ei += ne.evaluate("mx*Ex + my*Ey + mz*Ez",
                               global_dict=self.__dict__).astype(out_dtype)
