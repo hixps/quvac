@@ -96,7 +96,7 @@ class GridXYZ:
             k = (2 * pi * np.fft.fftfreq(Nx, dx)).astype(config.FDTYPE)
             setattr(self, f"k{ax}", k)
 
-        self.kgrid = tuple((self.kx, self.ky, self.kz))
+        self.kgrid = (self.kx, self.ky, self.kz)
         self.kgrid_shifted = tuple(
             np.fft.fftshift(k) for k in (self.kx, self.ky, self.kz)
         )
@@ -107,8 +107,8 @@ class GridXYZ:
             self.kx, self.ky, self.kz, indexing="ij", sparse=True
         )
         kx, ky, kz = self.kmeshgrid
-        self.kabs = kabs = ne.evaluate("sqrt(kx**2 + ky**2 + kz**2)")
-        kperp = ne.evaluate("sqrt(kx**2 + ky**2)")
+        self.kabs = kabs = ne.evaluate("sqrt(kx**2 + ky**2 + kz**2)") # noqa: F841
+        kperp = ne.evaluate("sqrt(kx**2 + ky**2)") # noqa: F841
 
         # Polarization vectors
         self.e1x = ne.evaluate("where((kx==0) & (ky==0), 1, kx * kz / (kperp*kabs))")
@@ -263,7 +263,8 @@ def get_bw(field_params):
     Returns
     -------
     tuple of float
-        A tuple containing the perpendicular and longitudinal bandwidths (kbw_perp, kbw_long).
+        A tuple containing the perpendicular and longitudinal bandwidths 
+        (kbw_perp, kbw_long).
 
     Raises
     ------
@@ -375,7 +376,8 @@ def get_xyz_size(fields, box_size, grid_res=1, equal_resolution=False):
     grid_res : float, optional
         Controls the resolution (default is 1).
     equal_resolution : bool, optional
-        Flag indicating if equal resolution in every dimension is needed (default is False).
+        Flag indicating if equal resolution in every dimension is needed 
+        (default is False).
 
     Returns
     -------
@@ -509,7 +511,7 @@ def create_dynamic_grid(fields_params, grid_params):
     Nxyz_ = get_xyz_size(fields_params, box_size)
     res = grid_params["spatial_resolution"]
     if isinstance(res, Iterable):
-        Nxyz = [Nx * res for Nx, res in zip(Nxyz_, res)]
+        Nxyz = [Nx * res for Nx, res in zip(Nxyz_, res, strict=True)]
     elif type(res) in (int, float):
         Nxyz = [Nx * res for Nx in Nxyz_]
     grid_params["Nxyz"] = Nxyz
@@ -580,8 +582,9 @@ def setup_grids(fields_params, grid_params):
 
     Notes
     -----
-    The spatial and temporal grids are created based on the mode specified in the grid parameters.
-    If 'dynamic' mode is selected, the grids are created dynamically based on the field parameters.
+    The spatial and temporal grids are created based on the mode specified in the grid 
+    parameters. If 'dynamic' mode is selected, the grids are created dynamically based 
+    on the field parameters.
     """
     if grid_params["mode"] == "dynamic":
         if isinstance(fields_params, dict):

@@ -6,11 +6,11 @@ import os
 from pathlib import Path
 
 import numpy as np
-from scipy.constants import c, pi
+from scipy.constants import pi
 
 try:
-    import matplotlib.pyplot as plt
     import matplotlib.colors as mcolors
+    import matplotlib.pyplot as plt
     MATPLOTLIB_AVAILABLE = True
 except ModuleNotFoundError:
     MATPLOTLIB_AVAILABLE = False
@@ -57,8 +57,9 @@ def pi_formatter(x, pos):
     """
     fractions = {0: "0", pi/8: r"$\frac{\pi}{8}$", pi/4: r"$\frac{\pi}{4}$", 
                  3*pi/8: r"$\frac{3\pi}{8}$", pi/2: r"$\frac{\pi}{2}$",
-                 5*pi/8: r"$\frac{5\pi}{8}$", 3*pi/4: r"$\frac{3\pi}{4}$", 7*pi/8: r"$\frac{7\pi}{8}$",
-                 pi: r"$\pi$", 9*pi/8: r"$\frac{9\pi}{8}$", 5*pi/4: r"$\frac{5*\pi}{4}$",
+                 5*pi/8: r"$\frac{5\pi}{8}$", 3*pi/4: r"$\frac{3\pi}{4}$",
+                 7*pi/8: r"$\frac{7\pi}{8}$", pi: r"$\pi$",
+                 9*pi/8: r"$\frac{9\pi}{8}$", 5*pi/4: r"$\frac{5*\pi}{4}$",
                  11*pi/8: r"$\frac{11\pi}{8}$", 3*pi/2: r"$\frac{3\pi}{2}$",
                  13*pi/8: r"$\frac{13\pi}{8}$", 7*pi/4: r"$\frac{7\pi}{4}$",
                  15*pi/8: r"$\frac{15\pi}{8}$", 2*pi: r"$2\pi$"}
@@ -82,7 +83,8 @@ def plot_roi(ax, x0, y0, dx, dy, line_kwargs):
     dy : float
         Half the height of the ROI.
     line_kwargs : dict
-        Keyword arguments to customize the appearance of the ROI lines (e.g., color, linestyle).
+        Keyword arguments to customize the appearance of the ROI lines 
+        (e.g., color, linestyle).
 
     Returns
     -------
@@ -91,12 +93,14 @@ def plot_roi(ax, x0, y0, dx, dy, line_kwargs):
 
     Notes
     -----
-    The ROI is represented as a rectangle centered at (x0, y0) with width 2*dx and height 2*dy.
+    The ROI is represented as a rectangle centered at (x0, y0) with width 2*dx and 
+    height 2*dy.
     """
     x_left, x_right = x0-dx, x0+dx
     y_top, y_bottom = y0-dy, y0+dy
-    pts = [(x_right,y_top),(x_left,y_top),(x_left,y_bottom),(x_right,y_bottom),(x_right,y_top)]
-    for pt1,pt2 in zip(pts[:-1],pts[1:]):
+    pts = [(x_right,y_top),(x_left,y_top),(x_left,y_bottom),
+           (x_right,y_bottom),(x_right,y_top)]
+    for pt1,pt2 in zip(pts[:-1],pts[1:],strict=True):
         ax.plot([pt1[0],pt2[0]], [pt1[1],pt2[1]], **line_kwargs)
     return ax
 
@@ -141,9 +145,9 @@ def plot_mollweide(fig, ax, phi, theta, data, cmap='coolwarm', norm=None):
     ax.set_xticks([-2, -1, 0, 1, 2])
     ax.set_yticks([-1.5, -1, -0.5, 0, 0.5, 1, 1.5])
     xtick_labels = np.linspace(60, 360, 5, endpoint=False, dtype=int)
-    ax.xaxis.set_ticklabels(r'$%s^{\circ}$' %num for num in xtick_labels)
+    ax.xaxis.set_ticklabels(f'${num}^{{\circ}}$' for num in xtick_labels)
     ytick_labels = np.linspace(0, 180, 7, endpoint=True, dtype=int)[::-1]
-    ax.yaxis.set_ticklabels(r'$%s^{\circ}$' %num for num in ytick_labels)
+    ax.yaxis.set_ticklabels(f'${num}^{{\circ}}$' for num in ytick_labels)
     for item in ax.xaxis.get_ticklabels() + ax.yaxis.get_ticklabels():
         item.set_fontsize(18)
     ax.grid()
@@ -190,7 +194,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
     nx, ny, nz = Nxyz
     x, y, z = [ax*1e6 for ax in field.grid_xyz.grid]
 
-    I = (E[0]**2 + E[1]**2 + E[2]**2 + B[0]**2 + B[1]**2 + B[2]**2)/2
+    intensity = (E[0]**2 + E[1]**2 + E[2]**2 + B[0]**2 + B[1]**2 + B[2]**2)/2
     field_comps = {
         "Ex": E[0],
         "Ey": E[1],
@@ -198,7 +202,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
         "Bx": B[0],
         "By": B[1],
         "Bz": B[2],
-        "Intensity": I,
+        "Intensity": intensity,
     }
 
     plot_keys = plot_keys if plot_keys is not None else field_comps.keys()
@@ -206,7 +210,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
     n_rows = len(plot_keys)
     n_cols = 2
 
-    fig = plt.figure(figsize=(12, 5*n_rows), layout="constrained")
+    plt.figure(figsize=(12, 5*n_rows), layout="constrained")
     for i,key in enumerate(plot_keys):
         if key == "Intensity":
             cmap = "inferno"
@@ -239,7 +243,7 @@ def plot_fields(field, t, plot_keys=None, cmap='coolwarm',
     axs = [x, y, z]
     axs_names = ["x", "y", "z"]
 
-    fig = plt.figure(figsize=(18, 5*n_rows), layout="constrained")
+    plt.figure(figsize=(18, 5*n_rows), layout="constrained")
     for i,key in enumerate(plot_keys):
         comp = field_comps[key]
         slices = [comp[:, ny//2, nz//2],

@@ -5,17 +5,17 @@ For details about spectral coefficient calculation (a1, a2)
 refer to :ref:`implementation` section of documentation. 
 """
 
-import logging
 from abc import ABC, abstractmethod
+import logging
 
 import numexpr as ne
 import numpy as np
+import pyfftw
 from scipy.constants import pi
 from scipy.spatial.transform import Rotation
-import pyfftw
 
-from quvac.field.utils import get_field_energy, get_field_energy_kspace
 from quvac import config
+from quvac.field.utils import get_field_energy, get_field_energy_kspace
 
 ANGLE_KEYS = "theta phi beta phase0".split()
 _logger = logging.getLogger("simulation")
@@ -63,7 +63,8 @@ class Field(ABC):
         E, B = self.calculate_field(t=0)
         W = get_field_energy(E, B, self.dV)
 
-        self.modify_energy = "W" in self.__dict__.keys() and not np.isclose(W, self.W, rtol=1e-5)
+        self.modify_energy = "W" in self.__dict__.keys() and not np.isclose(W, self.W, 
+                                                                            rtol=1e-5)
         if self.modify_energy:
             self.W_correction = np.sqrt(self.W / W) if W > 0 else 0
             self.W_num = self.W
@@ -149,10 +150,12 @@ class Field(ABC):
 
         out_dtype = config.FDTYPE if mode == "real" else config.CDTYPE
         # Transform to the original coordinate frame
-        for i, (Ei, Bi) in enumerate(zip(E_out, B_out)):
+        for i, (Ei, Bi) in enumerate(zip(E_out, B_out, strict=2)):
             mx, my, mz = self.rotation_m[i, :]
-            Ei += ne.evaluate("mx*Ex + my*Ey + mz*Ez", global_dict=self.__dict__).astype(out_dtype)
-            Bi += ne.evaluate("mx*Bx + my*By + mz*Bz", global_dict=self.__dict__).astype(out_dtype)
+            Ei += ne.evaluate("mx*Ex + my*Ey + mz*Ez",
+                              global_dict=self.__dict__).astype(out_dtype)
+            Bi += ne.evaluate("mx*Bx + my*By + mz*Bz",
+                              global_dict=self.__dict__).astype(out_dtype)
         return E_out, B_out
     
     def convert_fields_to_real(self):
@@ -290,10 +293,10 @@ class ExplicitField(Field):
         Efx, Efy, Efz = self.Ef
 
         self.a1 = ne.evaluate(
-            f"dV * (e1x*Efx + e1y*Efy + e1z*Efz)", global_dict=self.__dict__
+            "dV * (e1x*Efx + e1y*Efy + e1z*Efz)", global_dict=self.__dict__
         )
         self.a2 = ne.evaluate(
-            f"dV * (e2x*Efx + e2y*Efy + e2z*Efz)", global_dict=self.__dict__
+            "dV * (e2x*Efx + e2y*Efy + e2z*Efz)", global_dict=self.__dict__
         )
 
         self._check_energy_kspace()

@@ -14,8 +14,8 @@ probe channel signal.
 """
 
 import os
-import time
 from pathlib import Path
+import time
 
 import numexpr as ne
 import numpy as np
@@ -199,14 +199,14 @@ class VacuumEmission:
         ne.evaluate(
             "exp(1j*kabs*c*t)", local_dict=self.prefactor_dict, out=self.prefactor
         )
-        for U_key, U_expr in zip(["U1_acc", "U2_acc"], [self.U1, self.U2]):
+        for U_key, U_expr in zip(["U1_acc", "U2_acc"], [self.U1, self.U2]): # noqa: B905
             for i, expr in enumerate(U_expr):
                 U_acc = getattr(self, U_key)[i]
                 ne.evaluate(expr, global_dict=self.U_dict, out=self.tmp[i])
                 self.tmp_fftw[i].execute()
 
                 U_res = ne.evaluate(
-                    f"U_acc + U*prefactor*dt*dV",
+                    "U_acc + U*prefactor*dt*dV",
                     global_dict={
                         "U_acc": U_acc,
                         "U": self.tmp[i],
@@ -223,8 +223,8 @@ class VacuumEmission:
         """
         self.dt = t_grid[1] - t_grid[0]
         if integration_method == "trapezoid":
-            end_pts = (0, len(t_grid) - 1)
-            for i, t in enumerate(t_grid):
+            # end_pts = (0, len(t_grid) - 1)
+            for _, t in enumerate(t_grid):
                 # weight = 0.5 if i in end_pts else 1.
                 weight = 1
                 self.calculate_one_time_step(t, weight=weight)
@@ -253,7 +253,7 @@ class VacuumEmission:
 
         # Results should be in U1_acc and U2_acc
         dims = 1 / BS**3 * m_e**2 * c**3 / hbar**2
-        prefactor = -1j * np.sqrt(alpha * self.kabs) / (2 * pi) ** 1.5 / 45 * dims
+        prefactor = -1j * np.sqrt(alpha * self.kabs) / (2 * pi) ** 1.5 / 45 * dims # noqa: F841
         # Next time need to be careful with f-strings and brackets
         self.S1 = ne.evaluate(
             f"prefactor * ({self.I_11_expr} - {self.I_22_expr})",

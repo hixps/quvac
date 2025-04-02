@@ -13,7 +13,7 @@ Currently supports:
 3. Discernible signal.
 4. Background field spectra.
 """
-
+# ruff: noqa: F841
 import logging
 import os
 import warnings
@@ -25,8 +25,8 @@ from scipy.integrate import trapezoid
 from scipy.ndimage import map_coordinates
 
 from quvac import config
-from quvac.field.maxwell import MaxwellMultiple
 from quvac.field.external_field import ExternalField
+from quvac.field.maxwell import MaxwellMultiple
 from quvac.grid import GridXYZ, get_pol_basis, setup_grids
 from quvac.log import sph_interp_warn
 from quvac.utils import read_yaml
@@ -100,7 +100,7 @@ def xyz2idx(xyz, xyz_grid):
     """
     nx, ny, nz = xyz[0].shape
     idxs = np.empty((3, nx, ny, nz))
-    for i, (x, grid) in enumerate(zip(xyz, xyz_grid)):
+    for i, (x, grid) in enumerate(zip(xyz, xyz_grid, strict=True)):
         x0, x1 = grid[0], grid[-1]
         idxs[i] = (x - x0) / (x1 - x0) * (len(grid) - 1)
     return idxs
@@ -164,8 +164,8 @@ def cartesian_to_spherical_array(
     return spherical_grid, arr_sph
 
 
-def integrate_spherical(arr, axs, axs_names=["k", "theta", "phi"],
-                        axs_integrate=["k", "theta", "phi"]):
+def integrate_spherical(arr, axs, axs_names=("k", "theta", "phi"),
+                        axs_integrate=("k", "theta", "phi")):
     """
     Integrate an array over spherical coordinates.
 
@@ -201,7 +201,7 @@ def integrate_spherical(arr, axs, axs_names=["k", "theta", "phi"],
     condition = len(axs) == len(axs_names) and len(axs) >= len(axs_integrate)
     assert condition, err_msg
 
-    axs_names_ = axs_names.copy()
+    axs_names_ = list(axs_names)
 
     integrand = arr.copy()
     for ax_name in axs_integrate:
@@ -257,7 +257,8 @@ def signal_in_detector(dN, theta, phi, detector, align_to_max=False):
         - 'dtheta' : float
             Half-width of the polar angle range (in degrees).
     align_to_max : bool
-        Whether to align detector to the max spot in the detected region, by default False
+        Whether to align detector to the max spot in the detected region, 
+        by default False.
 
     Returns
     -------
@@ -266,7 +267,8 @@ def signal_in_detector(dN, theta, phi, detector, align_to_max=False):
 
     Notes
     -----
-    The function integrates the signal over the specified detector region in spherical coordinates.
+    The function integrates the signal over the specified detector region in spherical 
+    coordinates.
     """
     phi0, theta0, dphi0, dtheta0 = [np.radians(detector[key]) for key 
                                   in "phi0 theta0 dphi dtheta".split()]
@@ -286,9 +288,6 @@ def signal_in_detector(dN, theta, phi, detector, align_to_max=False):
         theta_det, phi_det = theta[idx_theta], phi[idx_phi]
 
     N_detected = np.sum(dN_det * np.sin(theta_det)[:,None]) * dphi * dtheta
-    # N_detected = integrate_spherical(dN_det, [theta_det, phi_det],
-    #                                  axs_names=['theta','phi'],
-    #                                  axs_integrate=['theta','phi'])
     return N_detected
     
 
@@ -421,7 +420,7 @@ class VacuumEmissionAnalyzer:
         self.fields_params = fields_params
         # Load data
         data = np.load(data_path)
-        grid = tuple((data["x"], data["y"], data["z"]))
+        grid = (data["x"], data["y"], data["z"])
         self.grid_xyz = GridXYZ(grid)
         self.grid_xyz.get_k_grid()
         # Update local dict with variables from GridXYZ class
@@ -432,7 +431,8 @@ class VacuumEmissionAnalyzer:
             setattr(self, f"k{ax}", np.fft.fftshift(kx))
             # self.__dict__[f"k{ax}"] = np.fft.fftshift(kx)
 
-        self.S1, self.S2 = data["S1"].astype(config.CDTYPE), data["S2"].astype(config.CDTYPE)
+        self.S1, self.S2 = (data["S1"].astype(config.CDTYPE),
+                            data["S2"].astype(config.CDTYPE))
 
         self.save_path = save_path
 
@@ -527,7 +527,8 @@ class VacuumEmissionAnalyzer:
         if stokes:
             self.get_Stokes_vector_for_ep()
         else:
-            Sp = (epx*e1x + epy*e1y + epz*e1z)*self.S1 + (epx*e2x + epy*e2y + epz*e2z)*self.S2
+            Sp = ((epx*e1x + epy*e1y + epz*e1z)*self.S1 + 
+                  (epx*e2x + epy*e2y + epz*e2z)*self.S2)
             Sp = Sp.real**2 + Sp.imag**2
 
             self.Np_xyz = np.fft.fftshift(Sp / (2 * pi) ** 3)
@@ -555,8 +556,10 @@ class VacuumEmissionAnalyzer:
         efx, efy, efz = self.ef
         epx, epy, epz = self.ep
 
-        Sf = (efx*e1x + efy*e1y + efz*e1z)*self.S1 + (efx*e2x + efy*e2y + efz*e2z)*self.S2
-        Sp = (epx*e1x + epy*e1y + epz*e1z)*self.S1 + (epx*e2x + epy*e2y + epz*e2z)*self.S2
+        Sf = ((efx*e1x + efy*e1y + efz*e1z)*self.S1 + 
+              (efx*e2x + efy*e2y + efz*e2z)*self.S2)
+        Sp = ((epx*e1x + epy*e1y + epz*e1z)*self.S1 + 
+              (epx*e2x + epy*e2y + epz*e2z)*self.S2)
 
         P1 = Sf.real**2 + Sf.imag**2 - (Sp.real**2 + Sp.imag**2)
         P2 = 2 * np.real(Sf * np.conj(Sp))
@@ -612,7 +615,7 @@ class VacuumEmissionAnalyzer:
                 warn_message = sph_interp_warn.format(
                     total_key, getattr(self, total_key), N_total
                 )
-                warnings.warn(warn_message)
+                warnings.warn(warn_message, stacklevel=2)
                 _logger.warning(warn_message)
 
         self.spherical_grid = self.k, self.theta, self.phi = spherical_grid
@@ -793,7 +796,8 @@ class VacuumEmissionAnalyzer:
         keys = "kx ky kz N_xyz N_total".split()
 
         if calculate_spherical:
-            self.get_signal_on_sph_grid(key="N_xyz", check_total=True, **spherical_params)
+            self.get_signal_on_sph_grid(key="N_xyz", check_total=True, 
+                                        **spherical_params)
             keys.extend("k theta phi N_sph N_sph_total".split())
         if calculate_xyz_background:
             # self.get_background_xyz()

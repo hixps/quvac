@@ -11,21 +11,29 @@ Usage:
     python simulation_parallel.py -i <input>.yaml -o <output_dir> 
     --wisdom <wisdom_file>
 """
+from copy import deepcopy
 import logging
 import os
-import time
-from copy import deepcopy
 from pathlib import Path
+import time
 
 import numpy as np
 import submitit
 
 from quvac.config import DEFAULT_SUBMITIT_PARAMS
 from quvac.grid import setup_grids
-from quvac.log import (get_parallel_performance_stats,
-                       simulation_end_str, simulation_start_str)
-from quvac.simulation import get_dirs, quvac_simulation, parse_args, postprocess_simulation
-from quvac.utils import read_yaml, write_yaml, get_maxrss
+from quvac.log import (
+    get_parallel_performance_stats,
+    simulation_end_str,
+    simulation_start_str,
+)
+from quvac.simulation import (
+    get_dirs,
+    parse_args,
+    postprocess_simulation,
+    quvac_simulation,
+)
+from quvac.utils import get_maxrss, read_yaml, write_yaml
 
 _logger = logging.getLogger("simulation")
 
@@ -137,7 +145,6 @@ def quvac_simulation_parallel(
     ini_config = read_yaml(ini_file)
     # One can choose either to perform just simulation, just postprocess or both
     mode = ini_config.get('mode', 'simulation_postprocess')
-    do_simulation = 'simulation' in mode
     do_postprocess = 'postprocess' in mode
 
     # Setup logger
@@ -146,7 +153,7 @@ def quvac_simulation_parallel(
         filemode="w",
         encoding="utf-8",
         level=logging.DEBUG,
-        format=f"%(message)s",
+        format="%(message)s",
     )
 
     # Start time
@@ -189,7 +196,7 @@ def quvac_simulation_parallel(
     _logger.info("MILESTONE: Jobs submitted, waiting for results...")
 
     # Wait till all jobs end
-    outputs = [job.result() for job in jobs]
+    _ = [job.result() for job in jobs]
     _logger.info("MILESTONE: Jobs are finished")
 
     # Collect all results
@@ -225,6 +232,13 @@ def quvac_simulation_parallel(
     _logger.info(end_print)
 
 
-if __name__ == "__main__":
+def main_simulation_parallel():
+    """
+    Main function to run the simulation in parallel.
+    """
     args = parse_args()
     quvac_simulation_parallel(args.input, args.output, args.wisdom)
+
+
+if __name__ == "__main__":
+    main_simulation_parallel()

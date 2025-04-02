@@ -159,13 +159,14 @@ def get_postprocess_info(postprocess_params):
         Formatted string with postprocess parameters.
     """
     calculate_spherical = postprocess_params.get("calculate_spherical", False)
-    spherical_params = postprocess_params.get("spherical_params", {})
+    # spherical_params = postprocess_params.get("spherical_params", {})
     calculate_discernible = postprocess_params.get("calculate_discernible", False)
     perp_type = postprocess_params.get("perp_polarization_type", "optical axis")
     perp_field_idx = postprocess_params.get("perp_field_idx", 1)
 
     postprocess_print = postprocess_str.format(
-        str(perp_type), str(perp_field_idx), str(calculate_spherical), str(calculate_discernible)
+        str(perp_type), str(perp_field_idx), str(calculate_spherical),
+        str(calculate_discernible)
     )
     return postprocess_print
 

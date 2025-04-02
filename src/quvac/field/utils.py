@@ -2,8 +2,8 @@
 Utility functions related to fields.
 """
 
-import numpy as np
 import numexpr as ne
+import numpy as np
 from scipy.constants import c, epsilon_0, mu_0, pi
 
 
@@ -69,7 +69,8 @@ def get_field_energy_kspace(a1, a2, k, dVk, mode="without 1/k"):
     
     If mode is 'with 1/k', the formula is:
     
-    W = 0.5 * epsilon_0 * c**2 * dVk / (2 * pi)**3 * sum(k**2 * {abs(a1)**2 + abs(a2)**2})
+    W = 0.5 * epsilon_0 * c**2 * dVk / (2 * pi)**3 * sum(k**2 * {abs(a1)**2 + 
+    abs(a2)**2})
     """
     a = "(a1.real**2 + a1.imag**2 + a2.real**2 + a2.imag**2)"
     expr = f"sum({a})" if mode == "without 1/k" else f"sum(k**2 * {a})"
@@ -145,13 +146,13 @@ def get_max_edge_amplitude(E):
     """
     Ex, Ey, Ez = E
     nx, ny, nz = Ex.shape
-    I = np.sqrt(abs(Ex)**2 + abs(Ey)**2 + abs(Ez)**2)
-    edges = [np.max(I[0,:,:]), np.max(I[-1,:,:]),
-             np.max(I[:,0,:]), np.max(I[:,-1,:]),
-             np.max(I[:,:,0]), np.max(I[:,:,-1])]
-    Iedge = np.max(edges)
-    print(f"Max intensity at edges: {Iedge/I.max():.2e}")
-    return Iedge
+    amplitude = np.sqrt(abs(Ex)**2 + abs(Ey)**2 + abs(Ez)**2)
+    edges = [np.max(amplitude[0,:,:]), np.max(amplitude[-1,:,:]),
+             np.max(amplitude[:,0,:]), np.max(amplitude[:,-1,:]),
+             np.max(amplitude[:,:,0]), np.max(amplitude[:,:,-1])]
+    amplitude_edge = np.max(edges)
+    print(f"Max intensity at edges: {amplitude_edge/amplitude.max():.2e}")
+    return amplitude_edge
 
 
 def get_intensity(field, t):
@@ -176,5 +177,5 @@ def get_intensity(field, t):
     """
     E, B = field.calculate_field(t=t)
     E, B = [np.real(Ex) for Ex in E], [np.real(Bx) for Bx in B]
-    I = (E[0]**2 + E[1]**2 + E[2]**2 + B[0]**2 + B[1]**2 + B[2]**2)/2
-    return I
+    intensity = (E[0]**2 + E[1]**2 + E[2]**2 + B[0]**2 + B[1]**2 + B[2]**2)/2
+    return intensity
