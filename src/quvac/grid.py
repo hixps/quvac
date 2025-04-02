@@ -96,7 +96,7 @@ class GridXYZ:
             k = (2 * pi * np.fft.fftfreq(Nx, dx)).astype(config.FDTYPE)
             setattr(self, f"k{ax}", k)
 
-        self.kgrid = tuple((self.kx, self.ky, self.kz))
+        self.kgrid = (self.kx, self.ky, self.kz)
         self.kgrid_shifted = tuple(
             np.fft.fftshift(k) for k in (self.kx, self.ky, self.kz)
         )

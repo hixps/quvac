@@ -423,7 +423,7 @@ class VacuumEmissionAnalyzer:
         self.fields_params = fields_params
         # Load data
         data = np.load(data_path)
-        grid = tuple((data["x"], data["y"], data["z"]))
+        grid = (data["x"], data["y"], data["z"])
         self.grid_xyz = GridXYZ(grid)
         self.grid_xyz.get_k_grid()
         # Update local dict with variables from GridXYZ class
