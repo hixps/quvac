@@ -58,6 +58,7 @@ select = [
     "E", # pycodestyle
     "I", # isort
     "B", # flake8-bugbear
+    "UP", # pyupgrade
 ]
 unfixable = [
     "F401",

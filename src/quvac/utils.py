@@ -30,7 +30,7 @@ def read_yaml(yaml_file):
     dict
         Contents of the YAML file.
     """
-    with open(yaml_file, "r") as stream:
+    with open(yaml_file) as stream:
         try:
             data = yaml.safe_load(stream)
             return data
