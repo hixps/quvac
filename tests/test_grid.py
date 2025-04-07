@@ -21,6 +21,7 @@ from quvac.grid import (
 
 TESTED_FIELD_TYPES = ["gaussian", "dipole"]
 
+
 @pytest.mark.parametrize(
     ("theta", "phi", "expected_ek", "expected_e1", "expected_e2"),
     [
@@ -57,6 +58,14 @@ def test_bandwidth_ok_field_params(field_type):
     bw_perp, bw_long = get_bw(field_params)
     assert bw_perp > 0, "Perpendicular bandwidth should be positive."
     assert bw_long > 0, "Longitudinal bandwidth should be positive."
+    # test gaussian with elliptic waist
+    if field_type == "gaussian":
+        field_params.pop("w0")
+        field_params["w0x"] = 4*800e-4
+        field_params["w0y"] = 2*800e-4
+        bw_perp, bw_long = get_bw(field_params)
+        assert bw_perp > 0, "Perpendicular bandwidth should be positive."
+        assert bw_long > 0, "Longitudinal bandwidth should be positive."
 
 
 def test_bandwidth_missing_gauss_params():
@@ -117,6 +126,12 @@ def test_get_xyz_size(field_type):
     assert (Nxyz[0] == Nxyz[1]) and (Nxyz[1] == Nxyz[2]), "grid should be equal in all "
     "dimensions."
 
+    # test with different input format (dict instead of list)
+    field_dict = {"field_1": field_params}
+    Nxyz = get_xyz_size(field_dict, box_size)
+    assert isinstance(Nxyz, list), "Nxyz should be a list."
+    assert len(Nxyz) == 3, "Nxyz should have 3 elements."
+
 
 def get_default_grid_params():
     return {
@@ -128,7 +143,7 @@ def get_default_grid_params():
     }
 
 
-@pytest.mark.parametrize("field_type", TESTED_FIELD_TYPES)
+@pytest.mark.parametrize("field_type", TESTED_FIELD_TYPES + ["invalid_field"])
 def test_get_box_size(field_type):
     field_params = get_default_field_params(field_type)
     grid_params = get_default_grid_params()
@@ -190,24 +205,38 @@ def get_two_default_gaussians():
     return [field_1, field_2]
 
 
+def compare_grids(fields_1, grid_params_1, fields_2, grid_params_2):
+    grid_1, grid_t_1 = setup_grids(fields_1, grid_params_1)
+    grid_2, grid_t_2 = setup_grids(fields_2, grid_params_2)
+
+    assert np.allclose(grid_t_1, grid_t_2), "Time grid should match."
+    condition = all(np.allclose(g1, g2) for g1, g2 in zip(grid_1.grid, grid_2.grid))  # noqa: B905
+    assert condition, "Spatial grids should match."
+
+
 def test_setup_grids():
     fields = get_two_default_gaussians()
+    fields_dict = {
+        "field_1": fields[0],
+        "field_2": fields[1],
+    }
     grid_params = get_default_grid_params()
-    grid, grid_t = setup_grids(fields, grid_params)
 
-    grid_params = create_dynamic_grid(fields, grid_params)
-    box_t = grid_params["time_factor"] * fields[0]["tau"]
-    grid_params["mode"] = "direct"
-    grid_params["box_t"] = [-box_t, box_t]
-    grid_2, grid_t_2 = setup_grids(fields, grid_params)
+    compare_grids(fields, grid_params, fields_dict, grid_params)
 
-    assert np.allclose(grid_t, grid_t_2), "Time grid should match."
-    condition = all(np.allclose(g1, g2) for g1, g2 in zip(grid.grid, grid_2.grid))  # noqa: B905
-    assert condition, "Spatial grids should match."
+    grid_params_dynamic = create_dynamic_grid(fields, grid_params)
+    box_t = grid_params_dynamic["time_factor"] * fields[0]["tau"]
+    grid_params_dynamic["mode"] = "direct"
+    grid_params_dynamic["box_t"] = [-box_t, box_t]
+
+    compare_grids(fields, grid_params, fields, grid_params_dynamic)
 
 
 def test_ignore_idx():
     fields = get_two_default_gaussians()
+    # assign very long duration -> unreasonably large time grid if this field is taken
+    # taken into account
+    fields[1]["tau"] = 100
     grid_params = get_default_grid_params()
     grid_params["ignore_idx"] = [1]
     grid, grid_t = setup_grids(fields, grid_params)
