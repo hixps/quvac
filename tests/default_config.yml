@@ -36,9 +36,9 @@ grid:
   longitudinal_factor: 6
   mode: dynamic
   spatial_resolution: 1
-  time_factor: 4
+  time_factor: 2
   time_resolution: 1
-  transverse_factor: 15
+  transverse_factor: 10
 integrator:
   type: vacuum_emission
 performance:
