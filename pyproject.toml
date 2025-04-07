@@ -55,6 +55,14 @@ Repository = "https://github.com/maxbalrog/quvac"
 [tool.uv]
 default-groups = "all"
 
+# exclude certain scripts from coverage report
+[tool.coverage.run]
+omit = [
+    "*/cluster/*",
+    "src/quvac/analytic_scalings.py",
+    "src/quvac/plotting.py",
+]
+
 [tool.ruff]
 extend-exclude = ["*.ipynb"]
 
