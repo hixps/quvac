@@ -1,6 +1,7 @@
 # quvac
 
-![CI](https://github.com/maxbalrog/quantum-vacuum/actions/workflows/install-package.yml/badge.svg)
+![Tests](https://github.com/maxbalrog/quantum-vacuum/actions/workflows/tests.yml/badge.svg)
+![Coverage](https://github.com/maxbalrog/quantum-vacuum/actions/workflows/coverage.yml/badge.svg)
 
 <img src="images/logo.jpg" alt="Alt Text" width="250" height="230">
 
