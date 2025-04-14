@@ -181,7 +181,8 @@ class GaussianAnalytic(ExplicitField):
         if self.polarization == "linear":
             if self.order > 0:
                 self.Ex = ne.evaluate("1j*Et * Ex_ho", global_dict=self.__dict__)
-                self.Ey = ne.evaluate("1j*Et * Ey_ho * xi * nu", global_dict=self.__dict__)
+                self.Ey = ne.evaluate("1j*Et * Ey_ho * xi * nu",
+                                      global_dict=self.__dict__)
                 self.Ez = ne.evaluate("Et * Ez_ho * xi", global_dict=self.__dict__)
                 self.Bx = 0.0
                 self.By = ne.evaluate("1j*Et * By_ho", global_dict=self.__dict__)
