@@ -44,6 +44,7 @@ class PlaneWave(ExplicitField):
     def __init__(self, field_params, grid):
         super().__init__(field_params, grid)
 
+        self.t0 = self.focus_t
         self.B0 = self.E0 / c
         self.l = getattr(self, "l", 0)
 
