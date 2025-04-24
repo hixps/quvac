@@ -44,6 +44,12 @@ class PlaneWave(ExplicitField):
     def __init__(self, field_params, grid):
         super().__init__(field_params, grid)
 
+        if "E0" not in field_params:
+            err_msg = ("Field params need to have either W (energy) or"
+                       "E0 (amplitude) as key")
+            assert "W" in field_params, err_msg
+            self.E0 = 1.0e10
+
         self.t0 = self.focus_t
         self.B0 = self.E0 / c
         self.l = getattr(self, "l", 0)
