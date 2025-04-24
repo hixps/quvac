@@ -50,6 +50,7 @@ class PlaneWave(ExplicitField):
             assert "W" in field_params, err_msg
             self.E0 = 1.0e10
 
+        self.x0, self.y0, self.z0 = getattr(self, "focus_x", [0,0,0])
         self.t0 = self.focus_t
         self.B0 = self.E0 / c
         self.l = getattr(self, "l", 0)
