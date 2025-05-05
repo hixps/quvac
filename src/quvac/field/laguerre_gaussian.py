@@ -4,7 +4,7 @@ Analytic expression for Laguerre-Gaussian modes.
 ----
 
 .. [1] L. Allen et al. "Orbital angular momentum of light and the transformation of 
-Laguerre-Gaussian laser modes." PRA 45.11 (1992): 8185.
+    Laguerre-Gaussian laser modes." PRA 45.11 (1992): 8185.
 """
 from math import factorial
 
@@ -24,32 +24,32 @@ class LaguerreGaussianAnalytic(ExplicitField):
     ----------
     field_params : dict
         Dictionary containing the field parameters. Required keys are:
-        - 'focus_x' : tuple of float
-            Location of spatial focus (x, y, z).
-        - 'focus_t' : float
-            Location of temporal focus.
-        - 'theta' : float
-            Polar angle of k-vector (in degrees).
-        - 'phi' : float
-            Azimuthal angle of k-vector (in degrees).
-        - 'beta' : float
-            Polarization angle (in degrees).
-        - 'lam' : float
-            Wavelength of the pulse.
-        - 'w0' : float
-            Waist size.
-        - 'tau' : float
-            Duration.
-        - 'phase0' : float
-            Phase delay at focus.
-        - 'p' : int
-            Radial index of the Laguerre-Gaussian mode.
-        - 'l' : int
-            Azimuthal index of the Laguerre-Gaussian mode.
-        - 'E0' : float, optional
-            Amplitude (either E0 or W is required).
-        - 'W' : float, optional
-            Energy (either E0 or W is required).
+            - 'focus_x' : tuple of float
+                Location of spatial focus (x, y, z).
+            - 'focus_t' : float
+                Location of temporal focus.
+            - 'theta' : float
+                Polar angle of k-vector (in degrees).
+            - 'phi' : float
+                Azimuthal angle of k-vector (in degrees).
+            - 'beta' : float
+                Polarization angle (in degrees).
+            - 'lam' : float
+                Wavelength of the pulse.
+            - 'w0' : float
+                Waist size.
+            - 'tau' : float
+                Duration.
+            - 'phase0' : float
+                Phase delay at focus.
+            - 'p' : int
+                Radial index of the Laguerre-Gaussian mode.
+            - 'l' : int
+                Azimuthal index of the Laguerre-Gaussian mode.
+            - 'E0' : float, optional
+                Amplitude (either E0 or W is required).
+            - 'W' : float, optional
+                Energy (either E0 or W is required).
     grid : quvac.grid.GridXYZ
         Spatial and spectral grid.
 

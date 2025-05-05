@@ -43,6 +43,7 @@ class GaussianAnalytic(ExplicitField):
                 Amplitude (either E0 or W is required).
             - 'W' : float, optional
                 Energy (either E0 or W is required).
+
     grid : quvac.grid.GridXYZ
         Spatial and grid.
 
@@ -53,8 +54,9 @@ class GaussianAnalytic(ExplicitField):
     Higher-order paraxial Gaussian orders are from [1]_.
 
     For circular polarization we abide by the following convention:
-        - `right-circular` correcponds to (ex + i*ey)
+        - `right-circular` corresponds to (ex + i*ey)
         - `left-circular` to (ex - i*ey)
+        
     Difference in field amplitudes for linear and circular polarization should 
     be automatically taken care of by energy correction.
     """

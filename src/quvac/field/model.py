@@ -40,17 +40,18 @@ class EBInhomogeneity(Field):
                 Amplitude.
             - 'envelope_type' : str
                 Envelope type, by default 'gauss'.
-            Envelope specific arguments:
-                For 'gauss':
-                    - 'w0' : float
-                        Waist size.
-                For 'gauss-modulated':
-                    - 'w0' : float
-                        Waist size.
-                    - 'lam': float
-                        Wavelength of modulation.
-                    - 'phase0': float, optional
-                        Initial phase
+
+        Envelope specific arguments:
+            For 'gauss':
+                - 'w0' : float
+                    Waist size.
+            For 'gauss-modulated':
+                - 'w0' : float
+                    Waist size.
+                - 'lam': float
+                    Wavelength of modulation.
+                - 'phase0': float, optional
+                    Initial phase
     grid : quvac.grid.GridXYZ
         Spatial and grid.
     """
