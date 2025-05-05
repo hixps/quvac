@@ -248,14 +248,14 @@ def signal_in_detector(dN, theta, phi, detector, align_to_max=False):
         Array of azimuthal angles (in radians) corresponding to the spherical grid.
     detector : dict
         Dictionary specifying the detector region. Required keys are:
-        - 'phi0' : float
-            Central azimuthal angle of the detector (in degrees).
-        - 'theta0' : float
-            Central polar angle of the detector (in degrees).
-        - 'dphi' : float
-            Half-width of the azimuthal angle range (in degrees).
-        - 'dtheta' : float
-            Half-width of the polar angle range (in degrees).
+            - 'phi0' : float
+                Central azimuthal angle of the detector (in degrees).
+            - 'theta0' : float
+                Central polar angle of the detector (in degrees).
+            - 'dphi' : float
+                Half-width of the azimuthal angle range (in degrees).
+            - 'dtheta' : float
+                Half-width of the polar angle range (in degrees).
     align_to_max : bool
         Whether to align detector to the max spot in the detected region, 
         by default False.
