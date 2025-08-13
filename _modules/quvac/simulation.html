@@ -487,8 +487,6 @@
     <span class="n">pyfftw_threads</span> <span class="o">=</span> <span class="n">perf_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pyfftw_threads&quot;</span><span class="p">,</span> <span class="n">nthreads</span><span class="p">)</span>
     <span class="n">use_wisdom</span> <span class="o">=</span> <span class="n">perf_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_wisdom&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">perf_params</span> <span class="o">=</span> <span class="n">ini_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;performance&quot;</span><span class="p">,</span> <span class="p">{})</span>
-
     <span class="c1"># Check if it&#39;s a test run to plan resources</span>
     <span class="n">test_run</span> <span class="o">=</span> <span class="n">perf_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;test_run&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
     <span class="n">test_timesteps</span> <span class="o">=</span> <span class="n">perf_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;test_timesteps&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>

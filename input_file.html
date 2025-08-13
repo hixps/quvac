@@ -283,18 +283,506 @@
 <h1>Create input file<a class="headerlink" href="#create-input-file" title="Link to this heading">¶</a></h1>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>We use <code class="docutils literal notranslate"><span class="pre">.yml</span></code> format for input files which has a dictionary-like structure. It has the following main sections:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">mode</span></code>: str (optional), one of <code class="docutils literal notranslate"><span class="pre">simulation</span></code>, <code class="docutils literal notranslate"><span class="pre">postprocess</span></code> or (default) <code class="docutils literal notranslate"><span class="pre">simulation_postprocess</span></code></dt><dd><p>Type of calculation to perform.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">fields</span></code>: dict of dicts</dt><dd><p>Parameters of background fields.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">grid</span></code>: dict</dt><dd><p>Grid parameters.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">integrator</span></code>: dict</dt><dd><p>Type of amplitude to calculate (total vacuum emission or linearized in the probe field).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">performance</span></code>: dict</dt><dd><p>Performance-related parameters.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">postprocess</span></code>: dict</dt><dd><p>Postprocessing parameters (which observables to calculate from the complex amplitudes).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">quvac-simulation-parallel</span></code> additionally requires section <code class="docutils literal notranslate"><span class="pre">cluster_params</span></code> describing
+parameters of parallelization. Similarly, <code class="docutils literal notranslate"><span class="pre">quvac-gridscan</span></code> requires a section <code class="docutils literal notranslate"><span class="pre">variables</span></code> (parameters
+being scanned and slurm job parameters), <code class="docutils literal notranslate"><span class="pre">quvac-optimization</span></code> requires a section <code class="docutils literal notranslate"><span class="pre">optimization</span></code>
+(parameters to setup optimization experiment: optimized variables, metrics, sampling strategy, …).</p>
 </section>
-<section id="field">
-<h2>Field<a class="headerlink" href="#field" title="Link to this heading">¶</a></h2>
+<section id="fields">
+<h2>Fields<a class="headerlink" href="#fields" title="Link to this heading">¶</a></h2>
+<p>This section of <code class="docutils literal notranslate"><span class="pre">.yml</span></code> file is constructed as <code class="docutils literal notranslate"><span class="pre">{'field_1':</span> <span class="pre">{...},</span> <span class="pre">'field_2':</span> <span class="pre">{...},</span> <span class="pre">...}</span></code> where each dictionary of field parameters has the <code class="docutils literal notranslate"><span class="pre">field_type</span></code> parameter and
+other parameters specific to the chosen field type.</p>
+<p><code class="docutils literal notranslate"><span class="pre">field_type</span></code> is constructed via the combination of the field name (<code class="docutils literal notranslate"><span class="pre">dipole</span></code>, <code class="docutils literal notranslate"><span class="pre">paraxial_gaussian</span></code>, <code class="docutils literal notranslate"><span class="pre">laguerre_gaussian</span></code>)
+and how it is simulated (<code class="docutils literal notranslate"><span class="pre">analytic</span></code>, <code class="docutils literal notranslate"><span class="pre">maxwell</span></code>). For instance, to use the analytic expression of paraxial Gaussian for all time steps, choose <code class="docutils literal notranslate"><span class="pre">paraxial_gaussian_analytic</span></code>;
+to use the dipole pulse expression for initialization and use linear Maxwell equations for later time steps, choose <code class="docutils literal notranslate"><span class="pre">dipole_maxwell</span></code>.</p>
+<p>Currently there are two special fields that are supported only as an analytic expression: <code class="docutils literal notranslate"><span class="pre">eb_inhomogeneity</span></code>, <code class="docutils literal notranslate"><span class="pre">plane_wave</span></code>.</p>
+<p>For the full list of available keywords, refer to <code class="docutils literal notranslate"><span class="pre">quvac.field.ANALYTIC_FIELDS</span></code> and <code class="docutils literal notranslate"><span class="pre">quvac.field.SPATIAL_MODEL_FIELDS</span></code>.</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head" rowspan="2"><p>Field parameters</p></th>
+<th class="head" colspan="3"><p>Field types</p></th>
+</tr>
+<tr class="row-even"><th class="head"><p>dipole</p></th>
+<th class="head"><p>paraxial_gaussian</p></th>
+<th class="head"><p>laguerre_gaussian</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">focus_x</span></code></p></td>
+<td colspan="3"><p>Focus location in space</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">focus_t</span></code></p></td>
+<td colspan="3"><p>Focus location in time</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">W</span></code></p></td>
+<td colspan="3"><p>Energy</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lam</span></code></p></td>
+<td colspan="3"><p>Wavelength</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tau</span></code></p></td>
+<td colspan="3"><p>Duration</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">theta</span></code>, <code class="docutils literal notranslate"><span class="pre">phi</span></code></p></td>
+<td><p>Virtual dipole moment orientation</p></td>
+<td colspan="2"><p>Optical axis orientation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">beta</span></code></p></td>
+<td><p>–</p></td>
+<td colspan="2"><p>Polarization angle</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">phase0</span></code></p></td>
+<td><p>–</p></td>
+<td colspan="2"><p>Phase delay at the focus</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">w0</span></code></p></td>
+<td><p>–</p></td>
+<td colspan="2"><p>Waist size</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">order</span></code></p></td>
+<td><p>–</p></td>
+<td colspan="2"><p>Paraxial expansion order</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">E0</span></code></p></td>
+<td><p>–</p></td>
+<td colspan="2"><p>Field amplitude (if W is not specified)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
+<td><p>–</p></td>
+<td><p>–</p></td>
+<td><p>Radial index of the Laguerre-Gaussian mode</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">l</span></code></p></td>
+<td><p>–</p></td>
+<td><p>–</p></td>
+<td><p>Azimuthal index of the Laguerre-Gaussian mode</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dipole_type</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">electric</span></code> or <code class="docutils literal notranslate"><span class="pre">magnetic</span></code></p></td>
+<td colspan="2"><p>–</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">envelope</span></code></p></td>
+<td><p>Temporal envelope type (<code class="docutils literal notranslate"><span class="pre">plane</span></code> or <code class="docutils literal notranslate"><span class="pre">gauss</span></code>)</p></td>
+<td colspan="2"><p>–</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </section>
 <section id="grid">
 <h2>Grid<a class="headerlink" href="#grid" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>Required keys are:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">mode</span></code><span class="classifier">str</span></dt><dd><p>Mode of grid creation (<code class="docutils literal notranslate"><span class="pre">dynamic</span></code> or <code class="docutils literal notranslate"><span class="pre">static</span></code>).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>Keys for <code class="docutils literal notranslate"><span class="pre">static</span></code> mode:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">box_xyz</span></code><span class="classifier">tuple of float</span></dt><dd><p>Box size for the spatial grid.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Nxyz</span></code><span class="classifier">tuple of int</span></dt><dd><p>Number of grid points along each spatial dimension.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">Nt</span></code><span class="classifier">int</span></dt><dd><p>Number of temporal points.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">box_t</span></code><span class="classifier">float or tuple of float</span></dt><dd><p>Time duration or start and end times for the temporal grid.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>Keys for <code class="docutils literal notranslate"><span class="pre">dynamic</span></code> mode:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">collision_geometry</span></code><span class="classifier">str</span></dt><dd><p>Specifies the collision geometry (‘x’, ‘y’, ‘z’).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">transverse_factor</span></code><span class="classifier">float</span></dt><dd><p>Factor to scale the transverse size.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">longitudinal_factor</span></code><span class="classifier">float</span></dt><dd><p>Factor to scale the longitudinal size.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">time_factor</span></code><span class="classifier">float</span></dt><dd><p>Factor to scale the time duration.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">spatial_resolution</span></code><span class="classifier">float or list of float, optional</span></dt><dd><p>Controls the spatial resolution.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">time_resolution</span></code><span class="classifier">float, optional</span></dt><dd><p>Controls the temporal resolution.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">ignore_idx</span></code><span class="classifier">list of int, optional</span></dt><dd><p>Indices of fields to ignore for dynamic grid creation.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
 </section>
-<section id="performance">
-<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h2>
+<section id="integrator-optional">
+<h2>Integrator (optional)<a class="headerlink" href="#integrator-optional" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>Keys:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">type</span></code>: str</dt><dd><p><code class="docutils literal notranslate"><span class="pre">vacuum_emission</span></code> (calculate the total vacuum emission amplitude) or <code class="docutils literal notranslate"><span class="pre">vacuum_emission_channels</span></code> (calculate the amplitude linearized in the probe field)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">probe_pump_idx</span></code>: dict</dt><dd><dl class="simple">
+<dt>Indices of probe and pump fields.</dt><dd><ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">probe</span></code>: list of int</dt><dd><p>Indices of the probe field, by default [0].</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">pump</span></code>: list of int</dt><dd><p>Indices of the pump field, by default [1].</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
 </section>
-<section id="postprocessing">
-<h2>Postprocessing<a class="headerlink" href="#postprocessing" title="Link to this heading">¶</a></h2>
+<section id="performance-optional">
+<h2>Performance (optional)<a class="headerlink" href="#performance-optional" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>Keys:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">precision</span></code>: str</dt><dd><p>Numerical precision for calculations: <code class="docutils literal notranslate"><span class="pre">float32</span></code> or (by default) <code class="docutils literal notranslate"><span class="pre">float64</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">nthreads</span></code>: int</dt><dd><p>Number of threads to use for <code class="docutils literal notranslate"><span class="pre">numexpr</span></code> library, by default all available CPUs.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">pyfftw_threads</span></code>: int</dt><dd><p>Number of threads to use for <code class="docutils literal notranslate"><span class="pre">pyfftw</span></code> library, by default equal to <code class="docutils literal notranslate"><span class="pre">nthreads</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">test_run</span></code>: bool</dt><dd><p>Whether to do a test run to estimate the resources for the full calculation.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">test_timesteps</span></code>: int</dt><dd><p>Number of timesteps for a test run, by default 5.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">use_wisdom</span></code>: bool</dt><dd><p>Whether to use existing wisdom file for <code class="docutils literal notranslate"><span class="pre">pyfftw</span></code> planning.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="postprocessing-optional">
+<h2>Postprocessing (optional)<a class="headerlink" href="#postprocessing-optional" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>This section is relevant only when <code class="docutils literal notranslate"><span class="pre">mode</span></code> is <code class="docutils literal notranslate"><span class="pre">postprocess</span></code> or <code class="docutils literal notranslate"><span class="pre">simulation_postprocess</span></code>. Relevant keys for the polarization-insensitive signals:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">calculate_xyz_background</span></code><span class="classifier">bool, optional</span></dt><dd><p>Whether to calculate the background spectra on Cartesian grid,
+by default False.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">bgr_idx</span></code><span class="classifier">int, optional</span></dt><dd><p>Index of the background field, by default None.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">calculate_spherical</span></code><span class="classifier">bool, optional</span></dt><dd><p>Whether to calculate the spectra on spherical grid,
+by default False.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">spherical_params</span></code><span class="classifier">dict, optional</span></dt><dd><p>Parameters for the spherical grid, by default None.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">calculate_discernible</span></code><span class="classifier">bool, optional</span></dt><dd><p>Whether to calculate the discernible signal, by default False.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">discernibility</span></code><span class="classifier">str, optional</span></dt><dd><p>Type of discernibility, (by default) <code class="docutils literal notranslate"><span class="pre">angular</span></code> or <code class="docutils literal notranslate"><span class="pre">spectral</span></code>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>Relevant keys for the polarization-sensitive signals:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">perp_field_idx</span></code><span class="classifier">int, optional</span></dt><dd><p>Index of the perpendicular field, by default 1.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">perp_type</span></code><span class="classifier">str, optional</span></dt><dd><p>Type of perpendicular polarization, <code class="docutils literal notranslate"><span class="pre">optical_axis</span></code> or <code class="docutils literal notranslate"><span class="pre">local_axis</span></code>, by default None.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">calculate_spherical</span></code><span class="classifier">bool, optional</span></dt><dd><p>Whether to calculate the spectra on spherical grid,
+by default False.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">spherical_params</span></code><span class="classifier">dict, optional</span></dt><dd><p>Parameters for the spherical grid, by default None.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">stokes</span></code><span class="classifier">bool, optional</span></dt><dd><p>Whether to calculate Stokes parameters, by default False.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="cluster-params-for-quvac-simulation-parallel">
+<h2>Cluster_params (for <code class="docutils literal notranslate"><span class="pre">quvac-simulation-parallel</span></code>)<a class="headerlink" href="#cluster-params-for-quvac-simulation-parallel" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>Keys:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">n_jobs</span></code>: int</dt><dd><p>Number of jobs to parallelize between, by default 2.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">max_jobs</span></code>: int</dt><dd><p>Maximal number of jobs to submit simultaneously, by default equal to <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cluster</span></code>: str,</dt><dd><p>Where perform calculations, <code class="docutils literal notranslate"><span class="pre">local</span></code> or <code class="docutils literal notranslate"><span class="pre">slurm</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">sbatch_params</span></code>: dict</dt><dd><p>Submission parameters for a single job. Possible keys: <code class="docutils literal notranslate"><span class="pre">slurm_partition</span></code>,
+<code class="docutils literal notranslate"><span class="pre">cpus_per_task</span></code>, <code class="docutils literal notranslate"><span class="pre">slurm_mem</span></code>, <code class="docutils literal notranslate"><span class="pre">timeout_min</span></code>. By default,
+<code class="docutils literal notranslate"><span class="pre">quvac.config.DEFAULT_SUBMITIT_PARAMS</span></code>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="variables-for-quvac-gridscan">
+<h2>Variables (for <code class="docutils literal notranslate"><span class="pre">quvac-gridscan</span></code>)<a class="headerlink" href="#variables-for-quvac-gridscan" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>Keys:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">create_grids</span></code>: bool</dt><dd><p>Flag to create grids given [start, end, n_steps].</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">fields</span></code>: dict</dt><dd><p>Parameters over which to perform grid scan.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cluster</span></code>: dict</dt><dd><ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cluster</span></code>: str</dt><dd><p><code class="docutils literal notranslate"><span class="pre">local</span></code> or <code class="docutils literal notranslate"><span class="pre">slurm</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">max_parallel_jobs</span></code>: int</dt><dd><p>Maximal number of submitted jobs in parallel.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">sbatch_params</span></code>: dict</dt><dd><p>Submission parameters for a single job.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="optimization-for-quvac-optimization">
+<h2>Optimization (for <code class="docutils literal notranslate"><span class="pre">quvac-optimization</span></code>)<a class="headerlink" href="#optimization-for-quvac-optimization" title="Link to this heading">¶</a></h2>
+<dl class="simple">
+<dt>Keys:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">name</span></code>: str</dt><dd><p>Optimization name.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">parameters</span></code>: dict</dt><dd><p>Optimized parameters given as lists [start, end].</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">energy_fields</span></code>: dict</dt><dd><dl class="simple">
+<dt>Fields participating in the energy optimization (to check that the fixed budget is not violated):</dt><dd><ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">fields</span></code>: list of int</dt><dd><p>Fields for which the fixed energy budget constraint should be satisfied.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">optimized_fields</span></code>: list of int</dt><dd><p>Fields being optimized.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">scales</span></code>: dict</dt><dd><p>Scales for optimized parameters. For instance, parameter could be the duration with bounds
+[20,50] and the provided scale 1e-15 corresponding to femtoseconds.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">cluster</span></code>: dict</dt><dd><p>Submission parameters for a single job.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">n_trials</span></code>: int</dt><dd><p>Number of trials to perform.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">objectives</span></code>: list of [str, bool]</dt><dd><p>Objective functions, for each function specify its name and whether to minimize it.
+For instance, for the total discernible signal objective funtion corresponds to <code class="docutils literal notranslate"><span class="pre">[['N_disc',</span> <span class="pre">False]]</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">objectives_params</span></code>: dict</dt><dd><dl class="simple">
+<dt>Objective parameters:</dt><dd><ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">detectors</span></code>: dict or list of dicts</dt><dd><p>Detector parameters (<code class="docutils literal notranslate"><span class="pre">phi0</span></code>, <code class="docutils literal notranslate"><span class="pre">theta0</span></code> for the center of detector, <code class="docutils literal notranslate"><span class="pre">dphi</span></code>, <code class="docutils literal notranslate"><span class="pre">dtheta</span></code> for its size).</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">track_metrics</span></code>: list of str</dt><dd><p>Additional metrics to track.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">parameter_constraints</span></code>: list of str</dt><dd><p>Optimized parameter constraints, for example <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span> <span class="pre">+</span> <span class="pre">c</span> <span class="pre">&lt;=</span> <span class="pre">1</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">gs_params</span></code>: dict</dt><dd><dl class="simple">
+<dt>Generation strategy parameters:</dt><dd><ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">num_random_trials</span></code>: int</dt><dd><p>Number of random trials to initialize Gaussian process.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
 </section>
 </section>
 
@@ -355,10 +843,14 @@
             <ul>
 <li><a class="reference internal" href="#">Create input file</a><ul>
 <li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#field">Field</a></li>
+<li><a class="reference internal" href="#fields">Fields</a></li>
 <li><a class="reference internal" href="#grid">Grid</a></li>
-<li><a class="reference internal" href="#performance">Performance</a></li>
-<li><a class="reference internal" href="#postprocessing">Postprocessing</a></li>
+<li><a class="reference internal" href="#integrator-optional">Integrator (optional)</a></li>
+<li><a class="reference internal" href="#performance-optional">Performance (optional)</a></li>
+<li><a class="reference internal" href="#postprocessing-optional">Postprocessing (optional)</a></li>
+<li><a class="reference internal" href="#cluster-params-for-quvac-simulation-parallel">Cluster_params (for <code class="docutils literal notranslate"><span class="pre">quvac-simulation-parallel</span></code>)</a></li>
+<li><a class="reference internal" href="#variables-for-quvac-gridscan">Variables (for <code class="docutils literal notranslate"><span class="pre">quvac-gridscan</span></code>)</a></li>
+<li><a class="reference internal" href="#optimization-for-quvac-optimization">Optimization (for <code class="docutils literal notranslate"><span class="pre">quvac-optimization</span></code>)</a></li>
 </ul>
 </li>
 </ul>
