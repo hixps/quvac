@@ -195,8 +195,6 @@ def run_simulation(ini_config, fields_params, files, timings, memory):
     pyfftw_threads = perf_params.get("pyfftw_threads", nthreads)
     use_wisdom = perf_params.get("use_wisdom", True)
 
-    perf_params = ini_config.get("performance", {})
-
     # Check if it's a test run to plan resources
     test_run = perf_params.get("test_run", False)
     test_timesteps = perf_params.get("test_timesteps", 5)
