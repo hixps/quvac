@@ -503,6 +503,21 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">polarization</span><span class="si">}</span><span class="s2">` polarization is not &quot;</span>
                                       <span class="s2">&quot;supported&quot;</span><span class="p">)</span></div>
 
+        
+<div class="viewcode-block" id="GaussianAnalytic.get_plane_wave_phase">
+<a class="viewcode-back" href="../../../autoapi/quvac/field/gaussian/index.html#quvac.field.gaussian.GaussianAnalytic.get_plane_wave_phase">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_plane_wave_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">alpha_chirp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;alpha_chirp&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">plane_phase</span> <span class="o">=</span> <span class="s2">&quot;(t-t0-z/c)&quot;</span>
+        <span class="k">if</span> <span class="n">alpha_chirp</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">psi_plane_expr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">plane_phase</span><span class="si">}</span><span class="s2">*(omega + alpha_chirp*</span><span class="si">{</span><span class="n">plane_phase</span><span class="si">}</span><span class="s2">/tau))&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">psi_plane_expr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(omega*</span><span class="si">{</span><span class="n">plane_phase</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="n">psi_plane</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">psi_plane_expr</span><span class="p">,</span> <span class="n">global_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span>
+                                <span class="n">local_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="n">c</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s1">&#39;omega&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">omega</span><span class="p">,</span>
+                                            <span class="s1">&#39;alpha_chirp&#39;</span><span class="p">:</span> <span class="n">alpha_chirp</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">psi_plane</span></div>
+
 
 <div class="viewcode-block" id="GaussianAnalytic.calculate_field">
 <a class="viewcode-back" href="../../../autoapi/quvac/field/gaussian/index.html#quvac.field.gaussian.GaussianAnalytic.calculate_field">[docs]</a>
@@ -511,7 +526,7 @@
 <span class="sd">        Calculates the electric and magnetic fields at a given time step.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">k</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lam</span> <span class="c1"># noqa: F841</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">psi_plane</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s2">&quot;(omega*(t-t0) - k*z)&quot;</span><span class="p">,</span> <span class="n">global_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">psi_plane</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_plane_wave_phase</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="s2">&quot;(phase_no_t + psi_plane)&quot;</span>
 
         <span class="n">Et</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span>

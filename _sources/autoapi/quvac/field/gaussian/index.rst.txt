@@ -95,6 +95,9 @@ Module Contents
    .. py:method:: figure_out_field_components(Et)
 
 
+   .. py:method:: get_plane_wave_phase(t)
+
+
    .. py:method:: calculate_field(t, E_out=None, B_out=None, mode='real')
 
       Calculates the electric and magnetic fields at a given time step.
