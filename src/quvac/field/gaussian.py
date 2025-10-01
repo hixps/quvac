@@ -230,7 +230,6 @@ class GaussianAnalytic(ExplicitField):
         Calculates the electric and magnetic fields at a given time step.
         """
         k = 2.0 * pi / self.lam # noqa: F841
-        # self.psi_plane = ne.evaluate("(omega*(t-t0) - k*z)", global_dict=self.__dict__)
         self.psi_plane = self.get_plane_wave_phase(t)
         self.phase = "(phase_no_t + psi_plane)"
 
