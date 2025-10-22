@@ -330,18 +330,22 @@ class SpectralField(Field):
     def __init__(self, field_params, grid):
         super().__init__(field_params, grid)
 
-    def rotate_kgrid(self, rotate_grid=True):
+    def rotate_kgrid(self):
         """
-        Rotates the coordinate grid.
-
-        Parameters
-        ----------
-        rotate_grid : bool, optional
-            Whether to rotate the grid coordinates. Default is True.
+        Rotates the k-space grid.
         """
-        self.rotate_coordinates()
-        self.grid_rotated = GridXYZ((self.x,self.y,self.z))
-        self.grid_rotated.get_k_grid()
+        self.get_rotation()
+        axes = "kx_rotated ky_rotated kz_rotated".split()
+        kx_, ky_, kz_ = self.kgrid
+        for i, ax in enumerate(axes):
+            mx, my, mz = self.rotation_bwd_m[i, :]
+            new_ax = ne.evaluate(
+                "mx*kx_ + my*ky_ + mz*kz_", global_dict=self.__dict__
+            )
+            setattr(self, ax, new_ax)
+        self.kabs_rotated = ne.evaluate(
+            "sqrt(kx_rotated**2 + ky_rotated**2 + kz_rotated**2)"
+        )
 
     def _check_energy_kspace(self):
         # Fix energy

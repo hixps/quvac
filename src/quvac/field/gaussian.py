@@ -311,7 +311,7 @@ class GaussianSpectral(SpectralField):
         self.omega = c * self.k
         self.alpha_chirp = getattr(self, "alpha_chirp", 0)
 
-        # Rotate coordinate grid
+        # Rotate k-space grid
         self.rotate_kgrid()
 
         self.kperp2 = "(kx**2 + ky**2)"
@@ -328,10 +328,10 @@ class GaussianSpectral(SpectralField):
         self.vector_potential_dict = {
             "pi": pi,
             "c": c,
-            "kx": self.grid_rotated.kmeshgrid[0],
-            "ky": self.grid_rotated.kmeshgrid[1],
-            "kz": self.grid_rotated.kmeshgrid[2],
-            "kabs": self.grid_rotated.kabs,
+            "kx": self.kx_rotated,
+            "ky": self.ky_rotated,
+            "kz": self.kz_rotated,
+            "kabs": self.kabs_rotated,
             "E0": self.E0,
             "tau": self.tau,
             "w0": self.w0,
