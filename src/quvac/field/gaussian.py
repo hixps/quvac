@@ -309,6 +309,7 @@ class GaussianSpectral(SpectralField):
         self.B0 = self.E0 / c
         self.k = 2.0 * pi / self.lam
         self.omega = c * self.k
+        self.alpha_chirp = getattr(self, "alpha_chirp", 0)
 
         # Rotate coordinate grid
         self.rotate_coordinates()
@@ -335,7 +336,7 @@ class GaussianSpectral(SpectralField):
             "tau": self.tau,
             "w0": self.w0,
             "omega": self.omega,
-            "alpha": self.alpha,
+            "alpha": self.alpha_chirp,
         }
     
     def calculate_field(self, t, E_out=None, B_out=None, mode="real"):
