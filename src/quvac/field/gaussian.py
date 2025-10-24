@@ -92,12 +92,17 @@ class GaussianAnalytic(ExplicitField):
         # Define variables not depending on time step
         self.w = "(w0 * sqrt(1. + (z/zR)**2))"
         self.r2 = "(x**2 + y**2)"
-        self.R = "(z + zR**2/z)"
+        # self.R = "(z + zR**2/z)"
+        self.R_inv = "z/(z**2 + zR**2)"
         self.E_expr = f"B0 * w0/{self.w} * exp(-{self.r2}/{self.w}**2)"
         self.phase_no_t = ne.evaluate(
-            f"phase0 - k*{self.r2}/(2.*{self.R}) + arctan(z/zR)",
+            f"phase0 - k*{self.r2}*{self.R_inv}/2. + arctan(z/zR)",
             global_dict=self.__dict__,
         )
+        # self.phase_no_t = ne.evaluate(
+        #     f"phase0 - k*{self.r2}/(2.*{self.R}) + arctan(z/zR)",
+        #     global_dict=self.__dict__,
+        # )
 
         self.E = ne.evaluate(self.E_expr, global_dict=self.__dict__)
 
