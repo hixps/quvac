@@ -112,12 +112,15 @@ class GridXYZ:
         kperp = ne.evaluate("sqrt(kx**2 + ky**2)") # noqa: F841
 
         # Polarization vectors
-        self.e1x = ne.evaluate("where((kx==0) & (ky==0), 1, kx * kz / (kperp*kabs))")
+        self.e1x = ne.evaluate(
+            "where((kx==0) & (ky==0), 2*(kz>0)-1, kx * kz / (kperp*kabs))"
+        )
         self.e1y = ne.evaluate("where((kx==0) & (ky==0), 0, ky * kz / (kperp*kabs))")
         self.e1z = ne.evaluate("where((kx==0) & (ky==0), 0, -kperp / kabs)")
 
         self.e2x = ne.evaluate("where((kx==0) & (ky==0), 0, -ky / kperp)")
-        self.e2y = ne.evaluate("where((kx==0) & (ky==0), 2*(kz>0)-1, kx / kperp)")
+        self.e2y = ne.evaluate("where((kx==0) & (ky==0), 1, kx / kperp)")
+        # self.e2y = ne.evaluate("where((kx==0) & (ky==0), 2*(kz>0)-1, kx / kperp)")
         self.e2z = 0
 
 
