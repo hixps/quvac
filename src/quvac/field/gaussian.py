@@ -422,11 +422,13 @@ class GaussianSpectralDirect(SpectralField):
         self.get_vector_potential()
 
     def get_vector_potential(self):
+        # kx, ky, kz = [np.fft.fftshift(k) for k in self.kmeshgrid]
         kx, ky, kz = self.kmeshgrid
         k0x, k0y, k0z = get_ek(self.theta, self.phi)
         klong = k0x*kx + k0y*ky + k0z*kz
         kperpx, kperpy, kperpz = (kx - klong*k0x, ky - klong*k0y, kz - klong*k0z)
         kperp2 = kperpx**2 + kperpy**2 + kperpz**2
+        kabs = np.sqrt(kx**2 + ky**2 + kz**2)
 
         self.vector_potential_expr = (
             "where(klong > 0, pi**1.5/2 * 1/(1j*kabs) * klong/kabs * E0*tau*w0**2 * "
@@ -440,7 +442,7 @@ class GaussianSpectralDirect(SpectralField):
             "kx": kx,
             "ky": ky,
             "kz": kz,
-            "kabs": self.kabs,
+            "kabs": kabs,
             "klong": klong,
             "kperp2": kperp2,
             "E0": self.E0,
@@ -450,11 +452,16 @@ class GaussianSpectralDirect(SpectralField):
             "alpha": self.alpha_chirp,
         }
 
+        x0, y0, z0 = [ax[0] for ax in self.grid.grid]
+        dft_factor = np.exp(1j*(kx*x0 + ky*y0 +kz*z0))
+
         vector_potential = ne.evaluate(self.vector_potential_expr,
                                        local_dict=self.vector_potential_dict)
+        vector_potential *= dft_factor
         
         ebeta = get_polarization_vector(self.theta, self.phi, self.beta)
         self.Ax, self.Ay, self.Az = [ei*vector_potential for ei in ebeta]
+        # self.Ax, self.Ay, self.Az = [np.fft.ifftshift(ei*vector_potential) for ei in ebeta]
     
     def calculate_field(self, t, E_out=None, B_out=None, mode="real"):
         """
