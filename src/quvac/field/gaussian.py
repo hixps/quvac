@@ -14,6 +14,7 @@ import numpy as np
 from scipy.constants import c, pi
 
 from quvac.field.abc import ExplicitField, SpectralField
+from quvac.grid import get_ek, get_polarization_vector
 
 
 class GaussianAnalytic(ExplicitField):
@@ -349,6 +350,111 @@ class GaussianSpectral(SpectralField):
             "omega": self.omega,
             "alpha": self.alpha_chirp,
         }
+    
+    def calculate_field(self, t, E_out=None, B_out=None, mode="real"):
+        """
+        Calculates the electric and magnetic fields at a given time step.
+        """
+        raise NotImplementedError("GaussianSpectral works only as a model field" \
+        "for MaxwellField")
+    
+
+class GaussianSpectralDirect(SpectralField):
+    """
+    Analytic expression for paraxial Gaussian beam.
+
+    Parameters
+    ----------
+    field_params : dict
+        Dictionary containing the field parameters. Required keys are:
+            - 'focus_x' : tuple of float
+                Location of spatial focus (x, y, z).
+            - 'focus_t' : float
+                Location of temporal focus.
+            - 'theta' : float
+                Polar angle of k-vector (in degrees).
+            - 'phi' : float
+                Azimuthal angle of k-vector (in degrees).
+            - 'beta' : float
+                Polarization angle (in degrees).
+            - 'lam' : float
+                Wavelength of the pulse.
+            - 'w0' : float
+                Waist size.
+            - 'tau' : float
+                Duration.
+            - 'phase0' : float
+                Phase delay at focus.
+            - 'E0' : float, optional
+                Amplitude (either E0 or W is required).
+            - 'W' : float, optional
+                Energy (either E0 or W is required).
+            - 'alpha_chirp' : float, optional
+                Linear chirp in frequency domain.
+
+    grid : quvac.grid.GridXYZ
+        Spatial and grid.
+
+    Notes
+    -----
+    All field parameters are in SI units.
+
+    The expression for the spectrum is taken from [2]_ (Eq. 24).
+    """
+
+    def __init__(self, field_params, grid):
+        super().__init__(field_params, grid)
+
+        if "E0" not in field_params:
+            err_msg = ("Field params need to have either W (energy) or"
+                       "E0 (amplitude) as key")
+            assert "W" in field_params, err_msg
+            self.E0 = 1.0e10
+
+        # Define additional field variables
+        self.x0, self.y0, self.z0 = self.focus_x
+        self.t0 = self.focus_t
+        self.B0 = self.E0 / c
+        self.k = 2.0 * pi / self.lam
+        self.omega = c * self.k
+        self.alpha_chirp = getattr(self, "alpha_chirp", 0)
+
+        self.get_vector_potential()
+
+    def get_vector_potential(self):
+        kx, ky, kz = self.kmeshgrid
+        k0x, k0y, k0z = get_ek(self.theta, self.phi)
+        klong = k0x*kx + k0y*ky + k0z*kz
+        kperpx, kperpy, kperpz = (kx - klong*k0x, ky - klong*k0y, kz - klong*k0z)
+        kperp2 = kperpx**2 + kperpy**2 + kperpz**2
+
+        self.vector_potential_expr = (
+            "where(klong > 0, pi**1.5/2 * 1/(1j*kabs) * klong/kabs * E0*tau*w0**2 * "
+            "exp(-(w0/2)**2*kperp2) * "
+            "exp(-(tau/4)**2*(c*kabs-omega)**2*(1-1j*alpha)), 0)"
+        )
+
+        self.vector_potential_dict = {
+            "pi": pi,
+            "c": c,
+            "kx": kx,
+            "ky": ky,
+            "kz": kz,
+            "kabs": self.kabs,
+            "klong": klong,
+            "kperp2": kperp2,
+            "E0": self.E0,
+            "tau": self.tau,
+            "w0": self.w0,
+            "omega": self.omega,
+            "alpha": self.alpha_chirp,
+        }
+
+        vector_potential = ne.evaluate(self.vector_potential_expr,
+                                       local_dict=self.vector_potential_dict)
+        
+        ebeta = get_polarization_vector(self.theta, self.phi, self.beta)
+        self.Ax, self.Ay, self.Az = [ei*vector_potential for ei in ebeta]
     
     def calculate_field(self, t, E_out=None, B_out=None, mode="real"):
         """

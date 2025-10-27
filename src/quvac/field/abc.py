@@ -421,6 +421,7 @@ class SpectralField(Field):
 
         return self.a1, self.a2
 
+
 class FieldFromFile(Field):
     """
     For fields that are loaded from file.

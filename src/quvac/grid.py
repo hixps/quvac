@@ -171,6 +171,30 @@ def get_pol_basis(theta, phi):
     return e1, e2
 
 
+def get_polarization_vector(theta, phi, beta):
+    """
+    Calculate polarization vector for given spherical angles theta and phi
+    and polarization angle beta.
+
+    Parameters
+    ----------
+    theta : float
+        The polar angle in radians.
+    phi : float
+        The azimuthal angle in radians.
+    beta : float
+        The polarization angle in radians.
+
+    Returns
+    -------
+    numpy.ndarray
+        3-element array representing the polarization vector.
+    """
+    e1, e2 = get_pol_basis(theta, phi)
+    ebeta = e1*np.cos(beta) + e2*np.sin(beta)
+    return ebeta
+
+
 def gaussian_bandwidth(field_params):
     """
     Calculate the gaussian bandwidth.
