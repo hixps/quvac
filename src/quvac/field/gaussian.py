@@ -14,7 +14,6 @@ import numpy as np
 from scipy.constants import c, pi
 
 from quvac.field.abc import ExplicitField, SpectralField
-from quvac.grid import get_ek, get_polarization_vector
 
 
 class GaussianAnalytic(ExplicitField):
@@ -93,17 +92,12 @@ class GaussianAnalytic(ExplicitField):
         # Define variables not depending on time step
         self.w = "(w0 * sqrt(1. + (z/zR)**2))"
         self.r2 = "(x**2 + y**2)"
-        # self.R = "(z + zR**2/z)"
         self.R_inv = "z/(z**2 + zR**2)"
         self.E_expr = f"B0 * w0/{self.w} * exp(-{self.r2}/{self.w}**2)"
         self.phase_no_t = ne.evaluate(
             f"phase0 - k*{self.r2}*{self.R_inv}/2. + arctan(z/zR)",
             global_dict=self.__dict__,
         )
-        # self.phase_no_t = ne.evaluate(
-        #     f"phase0 - k*{self.r2}/(2.*{self.R}) + arctan(z/zR)",
-        #     global_dict=self.__dict__,
-        # )
 
         self.E = ne.evaluate(self.E_expr, global_dict=self.__dict__)
 
@@ -233,10 +227,11 @@ class GaussianAnalytic(ExplicitField):
             'omega': self.omega,
             'alpha_chirp': alpha_chirp,
         }
-        temporal_phase = ne.evaluate(f"(omega*{plane_phase_expr})", global_dict=self.__dict__,
-                                          local_dict=phase_dict)
+        temporal_phase = ne.evaluate(f"(omega*{plane_phase_expr})",
+                                     global_dict=self.__dict__, local_dict=phase_dict)
         if alpha_chirp != 0:
-            psi_plane_expr = f"({plane_phase_expr}*omega*(1 + alpha_chirp*{plane_phase_expr}/(tau/2)))"
+            psi_plane_expr = (f"({plane_phase_expr}*omega*"
+                              f"(1 + alpha_chirp*{plane_phase_expr}/(tau/2)))")
             psi_plane = ne.evaluate(psi_plane_expr, global_dict=self.__dict__,
                                     local_dict=phase_dict)
         else:
