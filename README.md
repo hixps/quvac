@@ -7,7 +7,7 @@
 
 Quvac (from quantum vacuum, pronounced as qu-ack 🐸) allows to calculate quantum vacuum signals produced during light-by-light scattering.
 
-Documentation is available [here](https://maxbalrog.github.io/quantum-vacuum/).
+Documentation is available [here](https://maxbalrog.github.io/quvac/).
 
 > [!IMPORTANT]
 > This project is still in development!
