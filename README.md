@@ -23,8 +23,10 @@ micromamba create -n quvac python=3.12
 After cloning the git repository and entering it, choose relevant optional dependencies
 
 - `[test]` allows to run tests
-- `[plot]` installs `matplotlib`
+- `[plot]` installs `matplotlib` and `jupyterlab`
+- `[docs]` installs `sphinx` and everything necessary for documentation generation
 - `[optimization]` installs Bayesian optimization package
+- `[light]` is a shorthand for `[test,plot,docs]`
 
 To install all dependencies, run
 
@@ -44,6 +46,34 @@ successfull (it takes some time).
 
 ```bash
 pytest
+```
+
+### Using `uv`
+
+If you prefer using `uv` package manager then the installation follows similar steps. After cloning the git repository and entering 
+it, create the environment and install `quvac`
+
+```bash
+uv venv
+uv pip install .[light]
+```
+
+You can test the installation with
+
+```bash
+uv run pytest
+```
+
+Launch the jupyterlab (e.g. tutorial notebooks) with
+
+```bash
+uv run jupyter lab
+```
+
+Generate the documentation with
+
+```bash
+uv run python -m sphinx -b html docs/source docs/build/html
 ```
 
 ## Contribution
