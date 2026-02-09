@@ -50,22 +50,26 @@ If you prefer using ``uv`` package manager then the installation follows similar
 it, create the environment and install ``quvac``
 
 .. code-block:: bash
+
     uv venv
     uv pip install .[light]
 
 You can test the installation with
 
 .. code-block:: bash
+
     uv run pytest
 
 Launch the jupyterlab (e.g. tutorial notebooks) with
 
 .. code-block:: bash
+
     uv run jupyter lab
 
 Generate the documentation with
 
 .. code-block:: bash
+    
     uv run python -m sphinx -b html docs/source docs/build/html
 
 
