@@ -282,7 +282,7 @@ class GaussianEllipticAnalytic(GaussianAnalytic):
                 Wavelength of the pulse.
             - 'w0x', 'w0y' : float
                 Waist sizes in x and y directions.
-            - 'ellipse_rotation_angle' : float
+            - 'ellipse_rotation_angle' : float, optional
                 Ellipse rotation angle (in degrees).
             - 'tau' : float
                 Duration.
@@ -348,6 +348,7 @@ class GaussianEllipticAnalytic(GaussianAnalytic):
             self.check_energy()
 
     def account_for_ellipse_rotation(self):
+        self.ellipse_rotation_angle = getattr(self, "ellipse_rotation_angle", 0)
         if self.ellipse_rotation_angle != 0:
             ell0 = self.ellipse_rotation_angle
             self.xrot = self.x*np.cos(ell0) + self.y*np.sin(ell0)
