@@ -503,7 +503,9 @@ def get_box_size(fields_params, grid_params):
     for field in fields_params:
         ftype = field["field_type"]
         if "gauss" in ftype:
-            length = field.get("w0", 0)
+            w0, w0x, w0y = [field.get(key, 0) for key in ("w0", "w0x", "w0y")]
+            length = length = np.max([w0, w0x, w0y])
+            # length = field.get("w0", 0)
         elif "dipole" in ftype:
             length = c * field.get("tau", 0) / 4
         else:
