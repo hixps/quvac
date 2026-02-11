@@ -560,9 +560,9 @@ def create_dynamic_grid(fields_params, grid_params):
     if isinstance(res, Iterable):
         assert len(res) == 3, "Spatial resolution must be a list of 3 values or a "
         "single value"
-        Nxyz = [Nx * res for Nx, res in zip(Nxyz_, res, strict=True)]
+        Nxyz = [int(Nx * res) for Nx, res in zip(Nxyz_, res, strict=True)]
     elif type(res) in (int, float):
-        Nxyz = [Nx * res for Nx in Nxyz_]
+        Nxyz = [int(Nx * res) for Nx in Nxyz_]
     grid_params_upd["Nxyz"] = Nxyz
 
     # Create temporal box
