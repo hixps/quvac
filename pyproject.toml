@@ -23,12 +23,12 @@ maintainers = [
 ]
 description = "Calculate quantum vacuum signal from the interaction of electromagnetic fields."
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["quantum", "vacuum", "qed", "maxwell", "electrodynamics"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python",
-  "Private :: Do Not Upload"
 ]
 
 [project.scripts]
