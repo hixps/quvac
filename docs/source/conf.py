@@ -1,6 +1,8 @@
 # Configuration file for the Sphinx documentation builder.
 from pathlib import Path
 
+import quvac
+
 # resolve package root
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "src"
@@ -15,7 +17,7 @@ __doc_const_in_modules__ = [
 project = 'quvac'
 copyright = '2025, maxbalrog'
 author = 'maxbalrog'
-release = '0.1.1'
+release = quvac.__version__
 
 # --------------------- General configuration ---------------------------------
 
@@ -64,6 +66,6 @@ html_theme = 'furo'
 html_static_path = ['_static']
 html_logo = "_static/logo.jpg"
 
-html_theme_options = {
-    "sidebar_hide_name": True,   # hides the project name, keeps only the logo
-}
+# html_theme_options = {
+#     "sidebar_hide_name": True,   # hides the project name, keeps only the logo
+# }
