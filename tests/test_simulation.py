@@ -76,7 +76,7 @@ def test_precision(tmp_path):
 ##########################################################################################
 
 
-def compare_total_number_of_bg_photons(ini_file, idx=1):
+def compare_total_number_of_bg_photons(ini_file):
     folder = os.path.dirname(ini_file)
     data = np.load(os.path.join(folder, "spectra_total.npz"))
     k,theta,phi,background = [
@@ -90,15 +90,15 @@ def compare_total_number_of_bg_photons(ini_file, idx=1):
     )
 
     ini_data = read_yaml(ini_file)
-    field_data = ini_data["fields"][f"field_{idx}"]
-    W, lam = field_data["W"], field_data["lam"]
-    bg_total_estimate = W*lam / (2*pi*c*hbar)
+    bg_total_estimate = 0
+    for field in ini_data["fields"].values():
+        W, lam = field["W"], field["lam"]
+        bg_total_estimate += W*lam / (2*pi*c*hbar)
 
-    err_msg = "Total number of bg photons from numerical calculation is not close to"
-    f"physics estimation! total (num): {bg_total_num:.2e}," 
-    f"total (est): {bg_total_estimate:.2e}"
-    print(err_msg)
-    assert np.isclose(bg_total_num, bg_total_estimate, rtol=1), err_msg
+    err_msg = ("Total number of bg photons from numerical calculation is not close to"
+              f"physics estimation! total (num): {bg_total_num:.2e}," 
+              f"total (est): {bg_total_estimate:.2e}")
+    assert np.isclose(bg_total_num, bg_total_estimate, rtol=0.5), err_msg
 
 
 def test_postprocess(tmp_path):
@@ -113,6 +113,9 @@ def test_postprocess(tmp_path):
     ini_file = save_ini(tmp_path, ini_data)
     quvac_simulation(ini_file)
 
+    # test that total number of bg photons agrees with a simple physical estimate
+    compare_total_number_of_bg_photons(ini_file)
+
     # test stokes, xyz_background
     ini_data["mode"] = "postprocess"
     ini_data["postprocess"].update({
@@ -122,9 +125,6 @@ def test_postprocess(tmp_path):
     })
     ini_file = save_ini(tmp_path, ini_data)
     quvac_simulation(ini_file)
-
-    # test that total number of bg photons agrees with a simple physical estimate
-    compare_total_number_of_bg_photons(ini_file)
 
     # test loading stokes parameters
     folder = os.path.dirname(ini_file)
