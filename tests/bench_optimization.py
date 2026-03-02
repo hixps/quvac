@@ -42,7 +42,7 @@ def test_optimization():
             "max_parallel_jobs": 2,
             "sbatch_params": DEFAULT_SLURM_PARAMS,
         },
-        "max_trials": 10,
+        "max_trials": 8,
         "objective": "N_total",
     }
     ini_data["optimization"] = optimization_data
@@ -59,9 +59,9 @@ def test_optimization():
     client_json = os.path.join(path, "experiment.json")
     ax_client = Client.load_from_json_file(client_json)
 
-    trials_params = gather_trials_data(ax_client, metric_names=["N_total"])
-    betas = [val["field_2:beta"] for val in trials_params.values()]
-    N_total = [val["N_total"] for val in trials_params.values()]
+    trials_data = gather_trials_data(ax_client, metric_names=["N_total"])
+    betas = trials_data["field_2:beta"]
+    N_total = trials_data["N_total"]
     beta_max = betas[np.argmax(N_total)]
 
     err_msg = "Optimization-found value of beta is not close to the real optimum"
