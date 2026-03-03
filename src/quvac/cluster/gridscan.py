@@ -13,14 +13,18 @@ Usage:
 """
 from copy import deepcopy
 import itertools
+import logging
 import os
 from pathlib import Path
 
 import numpy as np
 
+from quvac.log import log_time
 from quvac.parallel import run_simulations_with_job_executor
-from quvac.simulation import parse_args
+from quvac.simulation import create_basic_logger, get_dirs, parse_args
 from quvac.utils import read_yaml, write_yaml
+
+_logger = logging.getLogger("simulation")
 
 
 def _create_grids(variables):
@@ -170,12 +174,15 @@ def cluster_gridscan(ini_file, save_path=None, wisdom_file=None):
     -------
     None
     """
-    # Check that ini file and save_path exists
-    assert os.path.isfile(ini_file), f"{ini_file} is not a file or does not exist"
-    if save_path is None:
-        save_path = os.path.dirname(ini_file)
-    if not os.path.exists(save_path):
-        Path(save_path).mkdir(parents=True, exist_ok=True)
+    # Check that ini file and save_path exist
+    files = get_dirs(ini_file, save_path, wisdom_file, mode="gridscan")
+    save_path = files['save_path']
+
+    # Setup logger
+    create_basic_logger(files["logger"])
+
+    # Start time
+    log_time(_logger, name="start")
 
     ini_default = read_yaml(ini_file)
     gridscan_params = ini_default["gridscan"]
@@ -200,6 +207,7 @@ def cluster_gridscan(ini_file, save_path=None, wisdom_file=None):
     ini_files = create_ini_files_for_gridscan(
         ini_default, param_names, param_grids, save_path
     )
+    _logger.info("MILESTONE: ini files are created for the specified grid.")
 
     run_simulations_with_job_executor(
         ini_files, 
@@ -207,7 +215,10 @@ def cluster_gridscan(ini_file, save_path=None, wisdom_file=None):
         save_path,
         max_parallel_jobs_default=5,
     )
-    print("Grid scan is finished!")
+    _logger.info("Grid scan is finished!")
+
+    # End time
+    log_time(_logger, name="end")
 
 
 def main_gridscan():
