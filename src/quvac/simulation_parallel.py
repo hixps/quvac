@@ -8,7 +8,7 @@ Usage:
 
 .. code-block:: bash
 
-    python simulation_parallel.py -i <input>.yaml -o <output_dir> 
+    python simulation_parallel.py -i <input>.yml -o <output_dir> 
     --wisdom <wisdom_file>
 """
 from copy import deepcopy
@@ -116,7 +116,7 @@ def quvac_simulation_parallel(
     ini_file, save_path=None, wisdom_file="wisdom/fftw-wisdom"
 ):
     """
-    Launch a single quvac simulation for given <ini>.yaml file in parallel.
+    Launch a single quvac simulation for given <ini>.yml file in parallel.
 
     Depending on available jobs, we split the total time interval
     into several sub-intervals and submit each sub-interval for

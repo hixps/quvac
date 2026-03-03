@@ -9,7 +9,7 @@ Usage:
 
 .. code-block:: bash
 
-    optimization.py -i <input>.yaml -o <output_dir>
+    optimization.py -i <input>.yml -o <output_dir>
 """
 from collections.abc import Iterable
 from copy import deepcopy

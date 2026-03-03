@@ -30,7 +30,7 @@ def test_gridscan():
     path = "data/test/test_gridscan"
     Path(path).mkdir(parents=True, exist_ok=True)
 
-    ini_file = os.path.join(path, "ini.yaml")
+    ini_file = os.path.join(path, "ini.yml")
     ini_data["gridscan"] = gridscan_data
     write_yaml(ini_file, ini_data)
 

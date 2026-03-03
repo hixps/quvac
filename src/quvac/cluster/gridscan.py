@@ -9,7 +9,7 @@ Usage:
 
 .. code-block:: bash
 
-    gridscan.py -i <input>.yaml -o <output_dir>
+    gridscan.py -i <input>.yml -o <output_dir>
 """
 from copy import deepcopy
 import itertools
