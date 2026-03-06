@@ -76,7 +76,7 @@ class VacuumEmission:
             for j in range(1, 3)
         }
         for key, val in self.I_ij.items():
-            self.__dict__[f"I_{key}_expr"] = val
+            setattr(self, f"I_{key}_expr", val)
 
     def _define_channel_variables(self):
         """
@@ -126,21 +126,16 @@ class VacuumEmission:
         """
         Allocate memory for FFT calculations.
         """
-        self.tmp = [
-            pyfftw.zeros_aligned(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)
-        ]
-        # Add number of threads
-        self.tmp_fftw = [
-            pyfftw.FFTW(
-                a,
-                a,
+        self.tmp = pyfftw.zeros_aligned(self.grid_shape, dtype=config.CDTYPE)
+        self.tmp_fftw = pyfftw.FFTW(
+                self.tmp,
+                self.tmp,
                 axes=(0, 1, 2),
                 direction="FFTW_FORWARD",
-                flags=("FFTW_MEASURE",),
+                flags=(config.FFTW_FLAG,),
                 threads=self.nthreads,
-            )
-            for a in self.tmp
-        ]
+        )
+
         self.prefactor = np.zeros(self.grid_shape, dtype="complex128")
 
         self.prefactor_dict = {
@@ -202,20 +197,20 @@ class VacuumEmission:
         for U_key, U_expr in zip(["U1_acc", "U2_acc"], [self.U1, self.U2]): # noqa: B905
             for i, expr in enumerate(U_expr):
                 U_acc = getattr(self, U_key)[i]
-                ne.evaluate(expr, global_dict=self.U_dict, out=self.tmp[i])
-                self.tmp_fftw[i].execute()
+                ne.evaluate(expr, global_dict=self.U_dict, out=self.tmp)
+                self.tmp_fftw.execute()
 
                 U_res = ne.evaluate(
                     "U_acc + U*prefactor*dt*dV",
                     global_dict={
                         "U_acc": U_acc,
-                        "U": self.tmp[i],
+                        "U": self.tmp,
                         "prefactor": self.prefactor,
                         "dt": self.dt,
                         "dV": self.dV,
                     },
                 )
-                U_acc[:] = U_res.astype(config.CDTYPE)
+                np.copyto(U_acc, U_res)
 
     def calculate_time_integral(self, t_grid, integration_method="trapezoid"):
         """

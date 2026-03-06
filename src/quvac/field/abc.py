@@ -241,7 +241,7 @@ class ExplicitField(Field):
                 a,
                 axes=(0, 1, 2),
                 direction="FFTW_FORWARD",
-                flags=("FFTW_MEASURE",),
+                flags=(config.FFTW_FLAG,),
                 threads=1,
             )
             for a in self.Ef

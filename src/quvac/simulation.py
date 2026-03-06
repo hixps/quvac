@@ -155,6 +155,19 @@ def set_precision(precision):
         config.CDTYPE = "complex128"
 
 
+def set_pyfftw_flag(flag):
+    """
+    Set global planning flag for pyfftw.
+
+    Parameters
+    ----------
+    flag : str
+        How much to plan the transform. One of `FFTW_ESTIMATE`, `FFTW_MEASURE`, 
+        `FFTW_PATIENT` and `FFTW_EXHAUSTIVE`.
+    """
+    config.FFTW_FLAG = flag
+
+
 def create_basic_logger(filename):
     logging.basicConfig(
         filename=filename,
@@ -353,11 +366,16 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file="wisdom/fftw-wisdom")
     timings['start'] = time.perf_counter()
     memory = {'maxrss_amplitudes': 0}
 
-    # Set up global precision for calculations
     perf_params = ini_config.get("performance", {})
+    # Set up global precision for calculations
+    # Note: since we use numexpr, internally it casts to 
+    # float64 and complex128 anyway!
     precision = perf_params.get("precision", "float64")
     set_precision(precision)
     _logger.info(f"Using {precision} precision")
+    # Set pyfftw planning flag
+    pyfftw_flag = perf_params.get("pyfftw_flag", "FFTW_MEASURE")
+    set_pyfftw_flag(pyfftw_flag)
 
     fields_params = ini_config["fields"]
     if isinstance(fields_params, dict):

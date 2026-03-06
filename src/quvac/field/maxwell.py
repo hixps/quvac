@@ -91,7 +91,7 @@ class MaxwellField(Field):
                             self.tmp,
                             axes=(0, 1, 2),
                             direction="FFTW_BACKWARD",
-                            flags=("FFTW_MEASURE",),
+                            flags=(config.FFTW_FLAG,),
                             threads=self.nthreads,
                        )
 
@@ -122,9 +122,9 @@ class MaxwellField(Field):
             ne.evaluate(self.EB_expr[idx], local_dict=self.EB_dict, out=self.tmp)
             self.EB_fftw.execute()
             if idx < 3:
-                E_out[idx][:] = self.tmp.astype(config.CDTYPE)
+                np.copyto(E_out[idx], self.tmp)
             else:
-                B_out[idx-3][:] = self.tmp.astype(config.CDTYPE)
+                np.copyto(B_out[idx-3], self.tmp)
         return E_out, B_out
 
 
