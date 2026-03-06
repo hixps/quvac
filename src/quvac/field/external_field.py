@@ -37,11 +37,12 @@ class ExternalField(Field):
         Number of threads to use for calculations.
     """
 
-    def __init__(self, fields_params, grid, nthreads=None):
+    def __init__(self, fields_params, grid, fft_executor=None, nthreads=None):
         self.fields = []
         self.grid_xyz = grid
 
         self.nthreads = nthreads if nthreads else os.cpu_count()
+        self.fft_executor = fft_executor
 
         # Reallocation of E_out and B_out fields at each time step was removed.
         # If Maxwell fields are present in the setup, the zeroing out fields is 
@@ -97,7 +98,8 @@ class ExternalField(Field):
             field = ANALYTIC_FIELDS[field_type](field_params, self.grid_xyz)
         elif field_type == "maxwell":
             field = MaxwellMultiple(
-                    field_params, self.grid_xyz, nthreads=self.nthreads
+                    field_params, self.grid_xyz, self.fft_executor, 
+                    nthreads=self.nthreads
                 )
         else:
             raise NotImplementedError(
@@ -161,7 +163,8 @@ class ProbePumpField(Field):
         ExternalField object for the pump fields.
     """
 
-    def __init__(self, fields_params, grid, probe_pump_idx=None, nthreads=None):
+    def __init__(self, fields_params, grid, fft_executor=None, probe_pump_idx=None, 
+                 nthreads=None):
         if not probe_pump_idx:
             probe_pump_idx = {"probe": [0], "pump": [1]}
         self.probe_pump_idx = probe_pump_idx
@@ -171,8 +174,10 @@ class ProbePumpField(Field):
         probe_params = [fields_params[idx] for idx in probe_pump_idx["probe"]]
         pump_params = [fields_params[idx] for idx in probe_pump_idx["pump"]]
 
-        self.probe_field = ExternalField(probe_params, grid, nthreads=nthreads)
-        self.pump_field = ExternalField(pump_params, grid, nthreads=nthreads)
+        self.probe_field = ExternalField(probe_params, grid, fft_executor, 
+                                         nthreads=nthreads)
+        self.pump_field = ExternalField(pump_params, grid, fft_executor, 
+                                        nthreads=nthreads)
 
     def calculate_field(self, t, E_probe=None, B_probe=None, E_pump=None, B_pump=None):
         """

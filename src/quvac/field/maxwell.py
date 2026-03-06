@@ -14,6 +14,7 @@ from scipy.constants import c, pi
 from quvac import config
 from quvac.field import SPATIAL_MODEL_FIELDS
 from quvac.field.abc import Field
+from quvac.pyfftw_executor import setup_fftw_executor
 
 _logger = logging.getLogger("simulation")
 
@@ -36,11 +37,12 @@ class MaxwellField(Field):
         the number of CPU cores.
     """
 
-    def __init__(self, grid, nthreads=None):
+    def __init__(self, grid, fft_executor=None, nthreads=None):
         self.grid_xyz = grid
         self.__dict__.update(self.grid_xyz.__dict__)
 
         self.nthreads = nthreads if nthreads else os.cpu_count()
+        self.fft_executor = fft_executor
 
         self.c = c
         self.norm_ifft = self.dVk / (2.0 * pi) ** 3
@@ -85,15 +87,16 @@ class MaxwellField(Field):
         """
         Allocate temporary memory for FFT calculations.
         """
-        self.tmp = pyfftw.zeros_aligned(self.grid_shape, dtype="complex128")
-        self.EB_fftw = pyfftw.FFTW(
-                            self.tmp,
-                            self.tmp,
-                            axes=(0, 1, 2),
-                            direction="FFTW_BACKWARD",
-                            flags=(config.FFTW_FLAG,),
-                            threads=self.nthreads,
-                       )
+        # self.tmp = pyfftw.zeros_aligned(self.grid_shape, dtype="complex128")
+        # self.EB_fftw = pyfftw.FFTW(
+        #                     self.tmp,
+        #                     self.tmp,
+        #                     axes=(0, 1, 2),
+        #                     direction="FFTW_BACKWARD",
+        #                     flags=(config.FFTW_FLAG,),
+        #                     threads=self.nthreads,
+        #                )
+        self.fft_executor = setup_fftw_executor(self.fft_executor, self.grid_shape)
 
     def calculate_field(self, t, E_out=None, B_out=None):
         """
@@ -119,12 +122,17 @@ class MaxwellField(Field):
         # Calculate fourier of fields at time t and transform back to
         # spatial domain
         for idx in range(6):
-            ne.evaluate(self.EB_expr[idx], local_dict=self.EB_dict, out=self.tmp)
-            self.EB_fftw.execute()
+            np.copyto(
+                self.fft_executor.tmp,
+                ne.evaluate(self.EB_expr[idx], local_dict=self.EB_dict)
+            )
+            # ne.evaluate(self.EB_expr[idx], local_dict=self.EB_dict, out=self.tmp)
+            # self.EB_fftw.execute()
+            self.fft_executor.backward_fftw.execute()
             if idx < 3:
-                np.copyto(E_out[idx], self.tmp)
+                np.copyto(E_out[idx], self.fft_executor.tmp)
             else:
-                np.copyto(B_out[idx-3], self.tmp)
+                np.copyto(B_out[idx-3], self.fft_executor.tmp)
         return E_out, B_out
 
 
@@ -155,8 +163,9 @@ class MaxwellMultiple(MaxwellField):
         Initial time for the field.
     """
 
-    def __init__(self, fields, grid, nthreads=None):
-        super().__init__(grid, nthreads)
+    def __init__(self, fields, grid, fft_executor=None, nthreads=None):
+        self.fft_executor = fft_executor
+        super().__init__(grid, fft_executor, nthreads)
 
         self.a1, self.a2 = [
             pyfftw.zeros_aligned(self.grid_shape, dtype=config.CDTYPE) for _ in range(2)
@@ -195,7 +204,7 @@ class MaxwellMultiple(MaxwellField):
             _logger.info(f"    {field_type}: {cls.__name__}")
             ini_field = cls(field_params, self.grid_xyz)
             self.t0 = ini_field.t0
-            a1, a2 = ini_field.get_a12(ini_field.t0)
+            a1, a2 = ini_field.get_a12(ini_field.t0, self.fft_executor)
         else:
             raise NotImplementedError(
                 f"`{field_type}` is not implemented, use"

@@ -16,6 +16,7 @@ from scipy.spatial.transform import Rotation
 
 from quvac import config
 from quvac.field.utils import get_field_energy, get_field_energy_kspace
+from quvac.pyfftw_executor import setup_fftw_executor
 
 ANGLE_KEYS = [
     "theta",
@@ -234,18 +235,23 @@ class ExplicitField(Field):
         self.Ef = [
             pyfftw.zeros_aligned(self.grid_shape, dtype="complex128") for _ in range(3)
         ]
+        self.fft_executor = setup_fftw_executor(self.fft_executor, self.grid_shape)
+        # if self.fft_executor is None:
+        #     self.fft_executor = FFTExecutor(self.grid_shape)
+        # self.fft_executor.allocate_fft()
+
         # pyfftw scheme
-        self.Ef_fftw = [
-            pyfftw.FFTW(
-                a,
-                a,
-                axes=(0, 1, 2),
-                direction="FFTW_FORWARD",
-                flags=(config.FFTW_FLAG,),
-                threads=1,
-            )
-            for a in self.Ef
-        ]
+        # self.Ef_fftw = [
+        #     pyfftw.FFTW(
+        #         a,
+        #         a,
+        #         axes=(0, 1, 2),
+        #         direction="FFTW_FORWARD",
+        #         flags=(config.FFTW_FLAG,),
+        #         threads=1,
+        #     )
+        #     for a in self.Ef
+        # ]
 
     def _check_energy_kspace(self):
         # Fix energy
@@ -267,7 +273,7 @@ class ExplicitField(Field):
         _logger.info(f'    Energy after "correction":          {W_corrected:.3f} J')
         
 
-    def get_a12(self, t0=None):
+    def get_a12(self, t0=None, fft_executor=None):
         """
         Calculates the a1 and a2 coefficients at a given time step.
 
@@ -289,11 +295,15 @@ class ExplicitField(Field):
         is corrected to the desired value.
         """
         t0 = t0 if t0 is not None else self.t0
+        self.fft_executor = fft_executor
         self._allocate_fft()
         self.calculate_field(t0, E_out=self.Ef, mode="complex")
 
         for idx in range(3):
-            self.Ef_fftw[idx].execute()
+            np.copyto(self.fft_executor.tmp, self.Ef[idx])
+            self.fft_executor.forward_fftw.execute()
+            np.copyto(self.Ef[idx], self.fft_executor.tmp)
+            # self.Ef_fftw[idx].execute()
 
         # Calculate a1, a2 coefficients
         Efx, Efy, Efz = self.Ef
@@ -307,7 +317,7 @@ class ExplicitField(Field):
 
         self._check_energy_kspace()
 
-        del self.Ef, self.Ef_fftw
+        del self.Ef
         return self.a1, self.a2
 
 

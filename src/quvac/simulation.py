@@ -32,6 +32,7 @@ from quvac.log import (
     log_time,
 )
 from quvac.postprocess import VacuumEmissionAnalyzer
+from quvac.pyfftw_executor import FFTExecutor
 from quvac.utils import get_maxrss, load_wisdom, read_yaml, save_wisdom, write_yaml
 
 _logger = logging.getLogger("simulation")
@@ -233,22 +234,28 @@ def run_simulation(ini_config, fields_params, files, timings, memory):
     _logger.info(grid_print)
     _logger.info("MILESTONE: Grids are created\n")
 
+    # Set up FFT executor
+    fft_executor = FFTExecutor(grid_xyz.grid_shape, pyfftw_threads)
+
     # Shorten time grid for the test run
     if test_run:
         expected_timesteps = len(grid_t)
         grid_t = grid_t[:test_timesteps]
         _logger.info(f"Performing test run for {test_timesteps} timesteps\n")
 
+
     # Field setup
     _logger.info(
         "Field constructor:\n" "===================================================="
     )
     if not channels:
-        field = ExternalField(fields_params, grid_xyz, nthreads=pyfftw_threads)
+        field = ExternalField(fields_params, grid_xyz, fft_executor, 
+                              nthreads=pyfftw_threads)
     else:
         field = ProbePumpField(
             fields_params,
             grid_xyz,
+            fft_executor,
             probe_pump_idx=probe_pump_idx,
             nthreads=pyfftw_threads,
         )
@@ -267,7 +274,8 @@ def run_simulation(ini_config, fields_params, files, timings, memory):
             f"    Pump  idx: {probe_pump['pump']}"
         )
     _logger.info(log_message)
-    vacem = VacuumEmission(field, grid_xyz, nthreads=pyfftw_threads, channels=channels)
+    vacem = VacuumEmission(field, grid_xyz, fft_executor, nthreads=pyfftw_threads, 
+                           channels=channels)
     timings['vacem_setup'] = time.perf_counter()
     timings['integral'] = vacem.calculate_amplitudes(grid_t, 
                                                      save_path=files['amplitudes'])

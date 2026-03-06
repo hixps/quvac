@@ -19,10 +19,10 @@ import time
 
 import numexpr as ne
 import numpy as np
-import pyfftw
 from scipy.constants import alpha, c, e, hbar, m_e, pi
 
 from quvac import config
+from quvac.pyfftw_executor import setup_fftw_executor
 
 BS = m_e**2 * c**2 / (hbar * e)  # Schwinger magnetic field
 
@@ -46,7 +46,7 @@ class VacuumEmission:
 
     """
 
-    def __init__(self, field, grid, nthreads=None, channels=False):
+    def __init__(self, field, grid, fft_executor, nthreads=None, channels=False):
         self.field = field
         self.grid_xyz = grid
         # Update local dict with variables from GridXYZ class
@@ -55,6 +55,8 @@ class VacuumEmission:
 
         self.c = c
         self.nthreads = nthreads if nthreads else os.cpu_count()
+
+        self.fft_executor = fft_executor
 
         # Define symbolic expressions to evaluate later
         self.F_expr = "(Bx**2 + By**2 + Bz**2 - Ex**2 - Ey**2 - Ez**2)/2"
@@ -126,15 +128,18 @@ class VacuumEmission:
         """
         Allocate memory for FFT calculations.
         """
-        self.tmp = pyfftw.zeros_aligned(self.grid_shape, dtype=config.CDTYPE)
-        self.tmp_fftw = pyfftw.FFTW(
-                self.tmp,
-                self.tmp,
-                axes=(0, 1, 2),
-                direction="FFTW_FORWARD",
-                flags=(config.FFTW_FLAG,),
-                threads=self.nthreads,
-        )
+        # self.tmp = pyfftw.zeros_aligned(self.grid_shape, dtype=config.CDTYPE)
+        # self.tmp_fftw = pyfftw.FFTW(
+        #         self.tmp,
+        #         self.tmp,
+        #         axes=(0, 1, 2),
+        #         direction="FFTW_FORWARD",
+        #         flags=(config.FFTW_FLAG,),
+        #         threads=self.nthreads,
+        # )
+        # self.fft_executor.allocate_fft()
+        # self.tmp = self.fft_executor.tmp
+        self.fft_executor = setup_fftw_executor(self.fft_executor, self.grid_shape)
 
         self.prefactor = np.zeros(self.grid_shape, dtype="complex128")
 
@@ -150,7 +155,8 @@ class VacuumEmission:
         Free allocated resources.
         """
         del self.E_out, self.B_out
-        del self.tmp, self.tmp_fftw
+        # del self.tmp, self.tmp_fftw
+        del self.fft_executor
 
     def calculate_one_time_step(self, t, weight=1):
         """
@@ -197,14 +203,14 @@ class VacuumEmission:
         for U_key, U_expr in zip(["U1_acc", "U2_acc"], [self.U1, self.U2]): # noqa: B905
             for i, expr in enumerate(U_expr):
                 U_acc = getattr(self, U_key)[i]
-                ne.evaluate(expr, global_dict=self.U_dict, out=self.tmp)
-                self.tmp_fftw.execute()
+                ne.evaluate(expr, global_dict=self.U_dict, out=self.fft_executor.tmp)
+                self.fft_executor.forward_fftw.execute()
 
                 U_res = ne.evaluate(
                     "U_acc + U*prefactor*dt*dV",
                     global_dict={
                         "U_acc": U_acc,
-                        "U": self.tmp,
+                        "U": self.fft_executor.tmp,
                         "prefactor": self.prefactor,
                         "dt": self.dt,
                         "dV": self.dV,
