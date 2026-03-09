@@ -114,6 +114,16 @@ class VacuumEmission:
         self.U1_acc_x, self.U1_acc_y, self.U1_acc_z = self.U1_acc
         self.U2_acc_x, self.U2_acc_y, self.U2_acc_z = self.U2_acc
 
+        self.U_pairs = [
+            (self.U1_acc, self.U1),
+            (self.U2_acc, self.U2),
+        ]
+
+        self.prefactor = np.ones(self.grid_shape, dtype="complex128")
+        self.prefactor_step = np.zeros(self.grid_shape, dtype="complex128")
+
+        self.U_dict = {"F": self.F, "G": self.G}
+
     def _allocate_fft(self):
         """
         Allocate memory for FFT calculations.
@@ -121,14 +131,18 @@ class VacuumEmission:
         self.fft_executor = setup_fftw_executor(self.fft_executor, self.vector_shape, 
                                                 self.nthreads)
 
-        self.prefactor = np.ones(self.grid_shape, dtype="complex128")
-        self.prefactor_step = np.zeros(self.grid_shape, dtype="complex128")
-
-        self.U_dict = {"F": self.F, "G": self.G}
         self.U_acc_dict = {
             "U": self.fft_executor.tmp,
             "prefactor": self.prefactor,
         }
+
+    def _allocate_resources(self):
+        """
+        Allocate arrays needed for calculation.
+        """
+        self._allocate_result_arrays()
+        self._allocate_fft()
+        self._allocate_fields()
 
     def _free_resources(self):
         """
@@ -181,7 +195,7 @@ class VacuumEmission:
                     out=self.prefactor)
 
         # Evaluate U1 and U2 expressions
-        for U_acc, U_expr in zip([self.U1_acc, self.U2_acc], [self.U1, self.U2]): # noqa: B905
+        for U_acc, U_expr in self.U_pairs: # noqa: B905
             ne.evaluate(U_expr, global_dict=self.U_dict, out=self.fft_executor.tmp)
             self.fft_executor.forward_fftw.execute()
 
@@ -238,26 +252,9 @@ class VacuumEmission:
         # finish calculation
         self.multiply_integration_result(t_grid)
 
-    def calculate_amplitudes(
-        self, t_grid, integration_method="trapezoid", save_path=None
-    ):
-        """
-        Calculate the vacuum emission amplitudes and save the result.
-        """
-        # Allocate resources
-        self._allocate_result_arrays()
-        self._allocate_fft()
-        self._allocate_fields()
-
-        time_integral_start = time.perf_counter()
-        self.calculate_time_integral(t_grid, integration_method)
-        time_integral_end = time.perf_counter()
-        time_integral = time_integral_end - time_integral_start
-
-        # Results should be in U1_acc and U2_acc
+    def _calculate_S1_S2(self):
         dims = 1 / BS**3 * m_e**2 * c**3 / hbar**2
         prefactor = -1j * np.sqrt(alpha * self.kabs) / (2 * pi) ** 1.5 / 45 * dims # noqa: F841
-        # Next time need to be careful with f-strings and brackets
         self.S1 = ne.evaluate(
             f"prefactor * ({self.I_11_expr} - {self.I_22_expr})",
             global_dict=self.__dict__,
@@ -266,6 +263,22 @@ class VacuumEmission:
             f"prefactor * ({self.I_12_expr} + {self.I_21_expr})",
             global_dict=self.__dict__,
         ).astype(config.CDTYPE)
+
+    def calculate_amplitudes(
+        self, t_grid, integration_method="trapezoid", save_path=None
+    ):
+        """
+        Calculate the vacuum emission amplitudes and save the result.
+        """
+        self._allocate_resources()
+
+        time_integral_start = time.perf_counter()
+        self.calculate_time_integral(t_grid, integration_method)
+        time_integral_end = time.perf_counter()
+        time_integral = time_integral_end - time_integral_start
+
+        # Calculate 
+        self._calculate_S1_S2()
         
         # Save amplitudes
         if save_path:

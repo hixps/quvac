@@ -51,13 +51,19 @@ class MaxwellField(Field):
         self.E_expr = "prefactor * (e1*a1 + e2*a2)"
         self.B_expr = "prefactor * (e2*a1 - e1*a2)"
 
-        self._allocate_tmp()
+        self.EB_pairs = [
+            [self.E_expr, None],
+            [self.B_expr, None],
+        ]
 
     def _allocate_ifft(self):
         """
         Allocate memory for inverse FFT calculations and define dictionaries
         for numexpr.evaluate().
         """
+        self.fft_executor = setup_fftw_executor(self.fft_executor, self.vector_shape, 
+                                                self.nthreads)
+        
         self.prefactor = np.zeros(self.grid_shape, dtype=config.CDTYPE)
 
         self.prefactor_dict = {
@@ -75,13 +81,6 @@ class MaxwellField(Field):
             "prefactor": self.prefactor,
         }
 
-    def _allocate_tmp(self):
-        """
-        Allocate temporary memory for FFT calculations.
-        """
-        self.fft_executor = setup_fftw_executor(self.fft_executor, self.vector_shape, 
-                                                self.nthreads)
-
     def calculate_field(self, t, E_out=None, B_out=None):
         """
         Calculates the electric and magnetic fields at a given time step.
@@ -89,6 +88,8 @@ class MaxwellField(Field):
         if E_out is None:
             E_out = np.zeros(self.vector_shape, dtype=config.CDTYPE)
             B_out = np.zeros(self.vector_shape, dtype=config.CDTYPE)
+        self.EB_pairs[0][1] = E_out
+        self.EB_pairs[1][1] = B_out
 
         # Calculate prefactor at time t
         self.prefactor_dict.update({"t": t})
@@ -97,7 +98,7 @@ class MaxwellField(Field):
 
         # Calculate fourier of fields at time t and transform back to
         # spatial domain
-        for expr,out_array in zip([self.E_expr, self.B_expr], [E_out, B_out]):  # noqa: B905
+        for expr,out_array in self.EB_pairs:  # noqa: B905
             ne.evaluate(expr, local_dict=self.EB_dict, out=self.fft_executor.tmp)
             self.fft_executor.backward_fftw.execute()
             np.copyto(out_array, self.fft_executor.tmp)
