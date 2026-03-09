@@ -67,8 +67,10 @@ class VacuumEmission:
         ]
 
         if not self.channels:
-            self.U1 = [f"(4*E{ax}*F + 7*B{ax}*G)" for ax in "xyz"]
-            self.U2 = [f"(4*B{ax}*F - 7*E{ax}*G)" for ax in "xyz"]
+            # self.U1 = [f"(4*E{ax}*F + 7*B{ax}*G)" for ax in "xyz"]
+            # self.U2 = [f"(4*B{ax}*F - 7*E{ax}*G)" for ax in "xyz"]
+            self.U1 = "(4*E*F + 7*B*G)"
+            self.U2 = "(4*B*F - 7*E*G)"
         else:
             self._define_channel_variables()
 
@@ -92,35 +94,44 @@ class VacuumEmission:
             np.zeros(self.grid_shape, dtype=config.FDTYPE) for _ in range(3)
         ]
 
-        self.U1 = [
-            f"(4*(Ep{ax}*F + E{ax}*F_B_Bp) + 7*(Bp{ax}*G + B{ax}*(G_Ep_B + G_E_Bp)))"
-            for ax in "xyz"
-        ]
-        self.U2 = [
-            f"(4*(Bp{ax}*F + B{ax}*F_B_Bp) - 7*(Ep{ax}*G + E{ax}*(G_Ep_B + G_E_Bp)))"
-            for ax in "xyz"
-        ]
+        # self.U1 = [
+        #     f"(4*(Ep{ax}*F + E{ax}*F_B_Bp) + 7*(Bp{ax}*G + B{ax}*(G_Ep_B + G_E_Bp)))"
+        #     for ax in "xyz"
+        # ]
+        # self.U2 = [
+        #     f"(4*(Bp{ax}*F + B{ax}*F_B_Bp) - 7*(Ep{ax}*G + E{ax}*(G_Ep_B + G_E_Bp)))"
+        #     for ax in "xyz"
+        # ]
+        self.U1 = "(4*(Ep*F + E*F_B_Bp) + 7*(Bp*G + B*(G_Ep_B + G_E_Bp)))"
+        self.U2 = "(4*(Bp*F + B*F_B_Bp) - 7*(Ep*G + E*(G_Ep_B + G_E_Bp)))"
 
     def _allocate_fields(self):
         """
         Allocate memory for field calculations.
         """
-        self.E_out = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
-        self.B_out = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+        # self.E_out = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+        # self.B_out = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+        # if self.channels:
+        #     self.E_probe = [
+        #         np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)
+        #     ]
+        #     self.B_probe = [
+        #         np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)
+        #     ]
+        self.E_out = np.zeros(self.vector_shape, dtype=config.CDTYPE)
+        self.B_out = np.zeros(self.vector_shape, dtype=config.CDTYPE)
         if self.channels:
-            self.E_probe = [
-                np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)
-            ]
-            self.B_probe = [
-                np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)
-            ]
+            self.E_probe = np.zeros(self.vector_shape, dtype=config.CDTYPE)
+            self.B_probe = np.zeros(self.vector_shape, dtype=config.CDTYPE)
 
     def _allocate_result_arrays(self):
         """
         Allocate memory for result arrays.
         """
-        self.U1_acc = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
-        self.U2_acc = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+        # self.U1_acc = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+        # self.U2_acc = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+        self.U1_acc = np.zeros(self.vector_shape, dtype=config.CDTYPE)
+        self.U2_acc = np.zeros(self.vector_shape, dtype=config.CDTYPE)
         self.U1_acc_x, self.U1_acc_y, self.U1_acc_z = self.U1_acc
         self.U2_acc_x, self.U2_acc_y, self.U2_acc_z = self.U2_acc
 
@@ -139,7 +150,7 @@ class VacuumEmission:
         # )
         # self.fft_executor.allocate_fft()
         # self.tmp = self.fft_executor.tmp
-        self.fft_executor = setup_fftw_executor(self.fft_executor, self.grid_shape)
+        self.fft_executor = setup_fftw_executor(self.fft_executor, self.vector_shape)
 
         self.prefactor = np.zeros(self.grid_shape, dtype="complex128")
 
@@ -175,12 +186,17 @@ class VacuumEmission:
                 E_pump=self.E_out,
                 B_pump=self.B_out,
             )
-            Epx, Epy, Epz = [E.real for E in self.E_probe]
-            Bpx, Bpy, Bpz = [B.real for B in self.B_probe]
+            # Epx, Epy, Epz = [E.real for E in self.E_probe]
+            # Bpx, Bpy, Bpz = [B.real for B in self.B_probe]
+            Ep = Epx, Epy, Epz = np.real(self.E_probe)
+            Bp = Bpx, Bpy, Bpz = np.real(self.B_probe)
 
-        Ex, Ey, Ez = [E.real for E in self.E_out]
-        Bx, By, Bz = [B.real for B in self.B_out]
-        self.U_dict.update({"Ex": Ex, "Ey": Ey, "Ez": Ez, "Bx": Bx, "By": By, "Bz": Bz})
+        # Ex, Ey, Ez = [E.real for E in self.E_out]
+        # Bx, By, Bz = [B.real for B in self.B_out]
+        E = Ex, Ey, Ez = np.real(self.E_out)
+        B = Bx, By, Bz = np.real(self.B_out)
+        self.U_dict.update({"Ex": Ex, "Ey": Ey, "Ez": Ez, "Bx": Bx, "By": By, "Bz": Bz,
+                            "E": E, "B": B})
 
         ne.evaluate(self.F_expr, out=self.F)
         ne.evaluate(self.G_expr, out=self.G)
@@ -193,7 +209,8 @@ class VacuumEmission:
                                 "Bpx": Bpx, "Bpy": Bpy, "Bpz": Bpz,
                                 "F_B_Bp": self.F_B_Bp,
                                 "G_Ep_B": self.G_Ep_B,
-                                "G_E_Bp": self.G_E_Bp,})
+                                "G_E_Bp": self.G_E_Bp,
+                                "Ep": Ep, "Bp": Bp,})
 
         # Evaluate U1 and U2 expressions
         self.prefactor_dict.update({"t": t})
@@ -201,12 +218,11 @@ class VacuumEmission:
             "exp(1j*kabs*c*t)", local_dict=self.prefactor_dict, out=self.prefactor
         )
         for U_key, U_expr in zip(["U1_acc", "U2_acc"], [self.U1, self.U2]): # noqa: B905
-            for i, expr in enumerate(U_expr):
-                U_acc = getattr(self, U_key)[i]
-                ne.evaluate(expr, global_dict=self.U_dict, out=self.fft_executor.tmp)
-                self.fft_executor.forward_fftw.execute()
+            U_acc = getattr(self, U_key)
+            ne.evaluate(U_expr, global_dict=self.U_dict, out=self.fft_executor.tmp)
+            self.fft_executor.forward_fftw.execute()
 
-                U_res = ne.evaluate(
+            U_res = ne.evaluate(
                     "U_acc + U*prefactor*dt*dV",
                     global_dict={
                         "U_acc": U_acc,
@@ -216,7 +232,24 @@ class VacuumEmission:
                         "dV": self.dV,
                     },
                 )
-                np.copyto(U_acc, U_res)
+            np.copyto(U_acc, U_res)
+            
+            # for i, expr in enumerate(U_expr):
+                # U_acc = getattr(self, U_key)[i]
+                # ne.evaluate(expr, global_dict=self.U_dict, out=self.fft_executor.tmp)
+                # self.fft_executor.forward_fftw.execute()
+
+                # U_res = ne.evaluate(
+                #     "U_acc + U*prefactor*dt*dV",
+                #     global_dict={
+                #         "U_acc": U_acc,
+                #         "U": self.fft_executor.tmp,
+                #         "prefactor": self.prefactor,
+                #         "dt": self.dt,
+                #         "dV": self.dV,
+                #     },
+                # )
+                # np.copyto(U_acc, U_res)
 
     def calculate_time_integral(self, t_grid, integration_method="trapezoid"):
         """

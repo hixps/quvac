@@ -48,9 +48,11 @@ class MaxwellField(Field):
         self.norm_ifft = self.dVk / (2.0 * pi) ** 3
 
         # 1st list for E, 2nd list for B
-        self.EB_expr = [f"(e1{ax}*a1t + e2{ax}*a2t)" for ax in "xyz"] + [
-            f"(e2{ax}*a1t - e1{ax}*a2t)" for ax in "xyz"
-        ]
+        # self.EB_expr = [f"(e1{ax}*a1t + e2{ax}*a2t)" for ax in "xyz"] + [
+        #     f"(e2{ax}*a1t - e1{ax}*a2t)" for ax in "xyz"
+        # ]
+        self.E_expr = "(e1*a1t + e2*a2t)"
+        self.B_expr = "(e2*a1t - e1*a2t)"
 
         self._allocate_tmp()
 
@@ -72,13 +74,19 @@ class MaxwellField(Field):
             "a2": self.a2,
         }
 
+        # self.EB_dict = {
+        #     "e1x": self.e1x,
+        #     "e1y": self.e1y,
+        #     "e1z": self.e1z,
+        #     "e2x": self.e2x,
+        #     "e2y": self.e2y,
+        #     "e2z": self.e2z,
+        #     "a1t": self.a1t,
+        #     "a2t": self.a2t,
+        # }
         self.EB_dict = {
-            "e1x": self.e1x,
-            "e1y": self.e1y,
-            "e1z": self.e1z,
-            "e2x": self.e2x,
-            "e2y": self.e2y,
-            "e2z": self.e2z,
+            "e1": self.e1,
+            "e2": self.e2,
             "a1t": self.a1t,
             "a2t": self.a2t,
         }
@@ -96,15 +104,17 @@ class MaxwellField(Field):
         #                     flags=(config.FFTW_FLAG,),
         #                     threads=self.nthreads,
         #                )
-        self.fft_executor = setup_fftw_executor(self.fft_executor, self.grid_shape)
+        self.fft_executor = setup_fftw_executor(self.fft_executor, self.vector_shape)
 
     def calculate_field(self, t, E_out=None, B_out=None):
         """
         Calculates the electric and magnetic fields at a given time step.
         """
         if E_out is None:
-            E_out = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
-            B_out = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+            # E_out = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+            # B_out = [np.zeros(self.grid_shape, dtype=config.CDTYPE) for _ in range(3)]
+            E_out = np.zeros(self.vector_shape, dtype=config.CDTYPE)
+            B_out = np.zeros(self.vector_shape, dtype=config.CDTYPE)
 
         # Calculate a1,a2 at time t
         self.a_dict.update({"t": t})
@@ -121,18 +131,35 @@ class MaxwellField(Field):
 
         # Calculate fourier of fields at time t and transform back to
         # spatial domain
-        for idx in range(6):
-            np.copyto(
-                self.fft_executor.tmp,
-                ne.evaluate(self.EB_expr[idx], local_dict=self.EB_dict)
-            )
-            # ne.evaluate(self.EB_expr[idx], local_dict=self.EB_dict, out=self.tmp)
-            # self.EB_fftw.execute()
-            self.fft_executor.backward_fftw.execute()
-            if idx < 3:
-                np.copyto(E_out[idx], self.fft_executor.tmp)
-            else:
-                np.copyto(B_out[idx-3], self.fft_executor.tmp)
+
+        # Transform electric field
+        np.copyto(
+            self.fft_executor.tmp,
+            ne.evaluate(self.E_expr, local_dict=self.EB_dict)
+        )
+        self.fft_executor.backward_fftw.execute()
+        np.copyto(E_out, self.fft_executor.tmp)
+
+        # Transform magnetic field
+        np.copyto(
+            self.fft_executor.tmp,
+            ne.evaluate(self.B_expr, local_dict=self.EB_dict)
+        )
+        self.fft_executor.backward_fftw.execute()
+        np.copyto(B_out, self.fft_executor.tmp)
+        
+        # for idx in range(6):
+        #     np.copyto(
+        #         self.fft_executor.tmp,
+        #         ne.evaluate(self.EB_expr[idx], local_dict=self.EB_dict)
+        #     )
+        #     # ne.evaluate(self.EB_expr[idx], local_dict=self.EB_dict, out=self.tmp)
+        #     # self.EB_fftw.execute()
+        #     self.fft_executor.backward_fftw.execute()
+        #     if idx < 3:
+        #         np.copyto(E_out[idx], self.fft_executor.tmp)
+        #     else:
+        #         np.copyto(B_out[idx-3], self.fft_executor.tmp)
         return E_out, B_out
 
 

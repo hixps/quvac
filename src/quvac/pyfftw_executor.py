@@ -11,18 +11,18 @@ from quvac import config
 
 
 class FFTExecutor:
-    def __init__(self, grid_shape, nthreads=None, fft_axes=(0,1,2)):
-        self.grid_shape = grid_shape
+    def __init__(self, tmp_shape, nthreads=None, fft_axes=(1,2,3)):
+        self.tmp_shape = tmp_shape
         self.nthreads = nthreads if nthreads else os.cpu_count()
         self.fft_axes = fft_axes
 
     def allocate_fft(self):
-        if getattr(self, "tmp_shape", None) is None:
+        if getattr(self, "tmp", None) is None:
             self._allocate_fft()
 
     def _allocate_fft(self):
         # self.tmp_shape = (3,) + self.grid_shape
-        self.tmp_shape = self.grid_shape
+        # self.tmp_shape = self.grid_shape
         self.tmp = pyfftw.zeros_aligned(self.tmp_shape, dtype=config.CDTYPE)
         
         self.forward_fftw = pyfftw.FFTW(

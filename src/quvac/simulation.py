@@ -235,7 +235,7 @@ def run_simulation(ini_config, fields_params, files, timings, memory):
     _logger.info("MILESTONE: Grids are created\n")
 
     # Set up FFT executor
-    fft_executor = FFTExecutor(grid_xyz.grid_shape, pyfftw_threads)
+    fft_executor = FFTExecutor(grid_xyz.vector_shape, pyfftw_threads)
 
     # Shorten time grid for the test run
     if test_run:

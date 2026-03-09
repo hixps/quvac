@@ -454,7 +454,7 @@ class VacuumEmissionAnalyzer:
         self.__dict__.update(self.grid_xyz.__dict__)
 
         # Set up FFT executor
-        self.fft_executor = FFTExecutor(self.grid_xyz.grid_shape)
+        self.fft_executor = FFTExecutor(self.grid_xyz.vector_shape)
 
         for ax in "xyz":
             kx = getattr(self, f"k{ax}")

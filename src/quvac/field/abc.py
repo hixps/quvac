@@ -130,9 +130,11 @@ class Field(ABC):
         """
         dtype = np.float64 if mode == "real" else np.complex128
         if E_out is None:
-            E_out = [np.zeros(self.grid_shape, dtype=dtype) for _ in range(3)]
+            # E_out = [np.zeros(self.grid_shape, dtype=dtype) for _ in range(3)]
+            E_out = np.zeros(self.vector_shape, dtype=dtype)
         if B_out is None:
-            B_out = [np.zeros(self.grid_shape, dtype=dtype) for _ in range(3)]
+            # B_out = [np.zeros(self.grid_shape, dtype=dtype) for _ in range(3)]
+            B_out = np.zeros(self.vector_shape, dtype=dtype)
         return E_out, B_out
     
     def rotate_fields_back(self, E_out, B_out, mode):
@@ -232,10 +234,11 @@ class ExplicitField(Field):
         """
         Allocates memory for FFT calculations.
         """
-        self.Ef = [
-            pyfftw.zeros_aligned(self.grid_shape, dtype="complex128") for _ in range(3)
-        ]
-        self.fft_executor = setup_fftw_executor(self.fft_executor, self.grid_shape)
+        # self.Ef = [
+        #     pyfftw.zeros_aligned(self.grid_shape, dtype="complex128") for _ in range(3)
+        # ]
+        self.Ef = pyfftw.zeros_aligned(self.vector_shape, dtype="complex128")
+        self.fft_executor = setup_fftw_executor(self.fft_executor, self.vector_shape)
         # if self.fft_executor is None:
         #     self.fft_executor = FFTExecutor(self.grid_shape)
         # self.fft_executor.allocate_fft()
@@ -299,10 +302,14 @@ class ExplicitField(Field):
         self._allocate_fft()
         self.calculate_field(t0, E_out=self.Ef, mode="complex")
 
-        for idx in range(3):
-            np.copyto(self.fft_executor.tmp, self.Ef[idx])
-            self.fft_executor.forward_fftw.execute()
-            np.copyto(self.Ef[idx], self.fft_executor.tmp)
+        np.copyto(self.fft_executor.tmp, self.Ef)
+        self.fft_executor.forward_fftw.execute()
+        np.copyto(self.Ef, self.fft_executor.tmp)
+
+        # for idx in range(3):
+        #     np.copyto(self.fft_executor.tmp, self.Ef[idx])
+        #     self.fft_executor.forward_fftw.execute()
+        #     np.copyto(self.Ef[idx], self.fft_executor.tmp)
             # self.Ef_fftw[idx].execute()
 
         # Calculate a1, a2 coefficients
@@ -314,6 +321,13 @@ class ExplicitField(Field):
         self.a2 = ne.evaluate(
             "dV * (e2x*Efx + e2y*Efy + e2z*Efz)", global_dict=self.__dict__
         )
+
+        # self.a1 = ne.evaluate(
+        #     "dV * (e1*Ef)", global_dict=self.__dict__
+        # )
+        # self.a2 = ne.evaluate(
+        #     "dV * (e2*Ef)", global_dict=self.__dict__
+        # )
 
         self._check_energy_kspace()
 
