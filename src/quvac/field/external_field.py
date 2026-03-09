@@ -22,6 +22,8 @@ class ExternalField(Field):
         List of dictionaries containing the parameters for each external field.
     grid : quvac.grid.GridXYZ
         Spatial and spectral grid.
+    fft_executor: quvac.pyfftw_executor.FFTExecutor, optional
+        Executor that performs FFTs.
     nthreads : int, optional
         Number of threads to use for calculations. If not provided, defaults to the 
         number of CPU cores.
@@ -32,6 +34,8 @@ class ExternalField(Field):
         List of field objects.
     grid_xyz : tuple of np.array
         The spatial grid.
+    fft_executor: quvac.pyfftw_executor.FFTExecutor
+        Executor that performs FFTs.
     nthreads : int
         Number of threads to use for calculations.
     """
@@ -146,6 +150,8 @@ class ProbePumpField(Field):
                 
         If not provided, defaults to {"probe": [0], "pump": [1]}.
 
+    fft_executor: quvac.pyfftw_executor.FFTExecutor, optional
+        Executor that performs FFTs.
     nthreads : int, optional
         Number of threads to use for calculations. If not provided, defaults to the 
         number of CPU cores.

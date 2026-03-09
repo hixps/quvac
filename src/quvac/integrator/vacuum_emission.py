@@ -37,6 +37,8 @@ class VacuumEmission:
         External fields.
     grid : quvac.grid.GridXYZ
         Spatial and spectral grid.
+    fft_executor: quvac.pyfftw_executor.FFTExecutor, optional
+        Executor that performs FFTs.
     nthreads : int, optional
         Number of threads to use for calculations. If not provided, 
         defaults to the number of CPU cores.
@@ -46,7 +48,7 @@ class VacuumEmission:
 
     """
 
-    def __init__(self, field, grid, fft_executor, nthreads=None, channels=False):
+    def __init__(self, field, grid, fft_executor=None, nthreads=None, channels=False):
         self.field = field
         self.grid_xyz = grid
         # Update local dict with variables from GridXYZ class
@@ -207,6 +209,9 @@ class VacuumEmission:
             )
 
     def multiply_integration_result(self, t_grid):
+        """
+        Multiply the integral by common prefactors.
+        """
         self._free_resources()
         # prefactor related to time grid and discretization
         self.prefactor_dict.update({"t": t_grid[0], "dt": self.dt, "dV": self.dV,})
@@ -253,6 +258,9 @@ class VacuumEmission:
         self.multiply_integration_result(t_grid)
 
     def _calculate_S1_S2(self):
+        """
+        Calculate S1 and S2 amplitudes from accumulated values of integrals U1 and U2.
+        """
         dims = 1 / BS**3 * m_e**2 * c**3 / hbar**2
         prefactor = -1j * np.sqrt(alpha * self.kabs) / (2 * pi) ** 1.5 / 45 * dims # noqa: F841
         self.S1 = ne.evaluate(

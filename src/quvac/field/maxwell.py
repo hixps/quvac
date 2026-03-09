@@ -31,6 +31,8 @@ class MaxwellField(Field):
     ----------
     grid : quvac.grid.GridXYZ
         Spatial and spectral grid.
+    fft_executor: quvac.pyfftw_executor.FFTExecutor, optional
+        Executor that performs FFTs.
     nthreads : int, optional
         Number of threads to use for calculations. If not provided, defaults to 
         the number of CPU cores.
@@ -117,6 +119,8 @@ class MaxwellMultiple(MaxwellField):
         Parameters of the fields.
     grid : quvac.grid.GridXYZ
         Spatial and spectral grid.
+    fft_executor: quvac.pyfftw_executor.FFTExecutor, optional
+        Executor that performs FFTs.
     nthreads : int, optional
         Number of threads to use for calculations. If not provided, defaults to the 
         number of CPU cores.
