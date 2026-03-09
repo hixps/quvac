@@ -1,0 +1,45 @@
+quvac.config
+============
+
+.. py:module:: quvac.config
+
+.. autoapi-nested-parse::
+
+   Configuration file for simulations.
+
+   ``FDTYPE`` and ``CDTYPE`` control the float precision for the
+   calculations (``float32`` or ``float64``).
+
+   ``DEFAULT_SLURM_PARAMS`` is a dictionary with default parameters for
+   job submission to the cluster.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   quvac.config.DEFAULT_SLURM_PARAMS
+   quvac.config.FDTYPE
+   quvac.config.CDTYPE
+   quvac.config.FFTW_FLAG
+
+
+Module Contents
+---------------
+
+.. py:data:: DEFAULT_SLURM_PARAMS
+
+.. py:data:: FDTYPE
+   :value: 'float64'
+
+
+.. py:data:: CDTYPE
+   :value: 'complex128'
+
+
+.. py:data:: FFTW_FLAG
+   :value: 'FFTW_MEASURE'
+
+
