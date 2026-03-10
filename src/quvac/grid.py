@@ -93,7 +93,7 @@ class GridXYZ:
             self._calculate_k_grid()
 
     def _calculate_k_grid(self):
-        self.e1, self.e2 = [np.zeros((3,) + self.grid_shape) for _ in range(2)]
+        self.e1, self.e2 = [np.zeros(self.vector_shape) for _ in range(2)]
 
         for i, ax in enumerate("xyz"):
             Nx, dx = self.grid_shape[i], self.dxyz[i]
