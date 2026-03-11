@@ -34,7 +34,14 @@ from quvac.log import (
 )
 from quvac.postprocess import VacuumEmissionAnalyzer
 from quvac.pyfftw_executor import FFTExecutor
-from quvac.utils import get_maxrss, load_wisdom, read_yaml, save_wisdom, write_yaml
+from quvac.utils import (
+    free_memory,
+    get_maxrss,
+    load_wisdom,
+    read_yaml,
+    save_wisdom,
+    write_yaml,
+)
 
 _logger = logging.getLogger("simulation")
 
@@ -411,6 +418,7 @@ def quvac_simulation(ini_file, save_path=None, wisdom_file="wisdom/fftw-wisdom")
     if do_simulation:
         timings, memory = run_simulation(ini_config, fields_params, 
                                          files, timings, memory)
+        free_memory()
     # Calculate spectra
     if do_postprocess:
         postprocess_simulation(ini_config, files, fields_params)

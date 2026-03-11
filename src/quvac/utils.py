@@ -2,6 +2,7 @@
 Useful generic utilities.
 """
 
+import gc
 import importlib
 import inspect
 import math
@@ -11,6 +12,7 @@ import pkgutil
 import platform
 import resource
 import shutil
+import sys
 
 import numpy as np
 import pyfftw
@@ -250,11 +252,11 @@ def estimate_max_required_memory(size):
     # this value is estimated by running the simulation with different grid sizes,
     # looking at the max used memory and fitting a line to the dependency
     # max memory vs grid size
-    MEMORY_SCALING = 62
+    MEMORY_SCALING = 56
     estimated_mem = size_to_Gb(math.prod(size))*MEMORY_SCALING
 
     # memory buffer just in case
-    SAFE_BUFFER = min(10, 0.2*estimated_mem)
+    SAFE_BUFFER = 10
     return int(np.ceil(estimated_mem + SAFE_BUFFER))
 
 
@@ -280,3 +282,10 @@ def estimate_memory_usage(ini_file):
 
     required_memory = estimate_max_required_memory(grid_xyz.grid_shape)
     return f"{required_memory}GB"
+
+
+def free_memory():
+    gc.collect()
+    if sys.platform == "linux":
+        import ctypes
+        ctypes.CDLL("libc.so.6").malloc_trim(0)

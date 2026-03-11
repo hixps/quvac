@@ -23,6 +23,7 @@ from scipy.constants import alpha, c, e, hbar, m_e, pi
 
 from quvac import config
 from quvac.pyfftw_executor import setup_fftw_executor
+from quvac.utils import free_memory
 
 BS = m_e**2 * c**2 / (hbar * e)  # Schwinger magnetic field
 
@@ -105,8 +106,8 @@ class VacuumEmission:
         ]
 
         if not self.channels:
-            self.U1 = "(4*E*F + 7*B*G)"
-            self.U2 = "(4*B*F - 7*E*G)"
+            self.U1_expr = "(4*E*F + 7*B*G)"
+            self.U2_expr = "(4*B*F - 7*E*G)"
         else:
             self._define_channel_variables()
 
@@ -130,8 +131,8 @@ class VacuumEmission:
             np.zeros(self.grid_shape, dtype=config.FDTYPE) for _ in range(3)
         ]
 
-        self.U1 = "(4*(Ep*F + E*F_B_Bp) + 7*(Bp*G + B*(G_Ep_B + G_E_Bp)))"
-        self.U2 = "(4*(Bp*F + B*F_B_Bp) - 7*(Ep*G + E*(G_Ep_B + G_E_Bp)))"
+        self.U1_expr = "(4*(Ep*F + E*F_B_Bp) + 7*(Bp*G + B*(G_Ep_B + G_E_Bp)))"
+        self.U2_expr = "(4*(Bp*F + B*F_B_Bp) - 7*(Ep*G + E*(G_Ep_B + G_E_Bp)))"
 
     def _allocate_fields(self):
         """
@@ -153,12 +154,16 @@ class VacuumEmission:
         self.U2_acc_x, self.U2_acc_y, self.U2_acc_z = self.U2_acc
 
         self.U_pairs = [
-            (self.U1_acc, self.U1),
-            (self.U2_acc, self.U2),
+            (self.U1_acc, self.U1_expr),
+            (self.U2_acc, self.U2_expr),
         ]
 
-        self.prefactor = np.ones(self.grid_shape, dtype="complex128")
-        self.prefactor_step = np.zeros(self.grid_shape, dtype="complex128")
+        # During the main loop calculation these arrays serve as buffers for calculation
+        # of prefactor and prefactor_step. When the calculation is finished, this space
+        # is used to store the transition amplitudes. It seems that Python garbage 
+        # collector doesn't manage to quickly clean the arrays that are not used.
+        self.prefactor = self.S1 = np.ones(self.grid_shape, dtype=config.CDTYPE)
+        self.prefactor_step = self.S2 = np.zeros(self.grid_shape, dtype=config.CDTYPE)
 
         self.U_dict = {"F": self.F, "G": self.G}
 
@@ -188,6 +193,11 @@ class VacuumEmission:
         """
         del self.E_out, self.B_out
         del self.fft_executor
+        del self.F, self.G
+        if self.channels:
+            del self.E_probe, self.B_probe
+            del self.F_B_Bp, self.G_Ep_B, self.G_E_Bp
+        free_memory()
 
     def calculate_one_time_step(self, t, weight=1):
         """
@@ -214,8 +224,8 @@ class VacuumEmission:
                             "Bx": Bx, "By": By, "Bz": Bz,})
 
         # Evaluate F and G
-        ne.evaluate(self.F_expr, out=self.F)
-        ne.evaluate(self.G_expr, out=self.G)
+        ne.evaluate(self.F_expr, local_dict=self.U_dict, out=self.F)
+        ne.evaluate(self.G_expr, local_dict=self.U_dict, out=self.G)
 
         if self.channels:
             ne.evaluate(self.F_B_Bp_expr, out=self.F_B_Bp)
@@ -289,14 +299,14 @@ class VacuumEmission:
         """
         dims = 1 / BS**3 * m_e**2 * c**3 / hbar**2
         prefactor = -1j * np.sqrt(alpha * self.kabs) / (2 * pi) ** 1.5 / 45 * dims # noqa: F841
-        self.S1 = ne.evaluate(
+        ne.evaluate(
             f"prefactor * ({self.I_11_expr} - {self.I_22_expr})",
-            global_dict=self.__dict__,
-        ).astype(config.CDTYPE)
-        self.S2 = ne.evaluate(
+            global_dict=self.__dict__, out=self.S1
+        )
+        ne.evaluate(
             f"prefactor * ({self.I_12_expr} + {self.I_21_expr})",
-            global_dict=self.__dict__,
-        ).astype(config.CDTYPE)
+            global_dict=self.__dict__, out=self.S2
+        )
 
     def calculate_amplitudes(
         self, t_grid, integration_method="trapezoid", integration_weights=None,
