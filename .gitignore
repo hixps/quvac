@@ -9,7 +9,7 @@ data/*
 experiments/*
 wisdom/*
 */wisdom/*
-profile*
+profiler/*
 *Untitled*
 notebooks/*
 quvac-test-venv/*

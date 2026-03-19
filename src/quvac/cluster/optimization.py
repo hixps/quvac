@@ -24,10 +24,15 @@ from ax.adapter.registry import Generators
 from ax.api.client import Client
 from ax.api.configs import RangeParameterConfig
 from ax.core.observation import ObservationFeatures
+from ax.generation_strategy.center_generation_node import CenterGenerationNode
 from ax.generation_strategy.generation_node import GenerationNode
 from ax.generation_strategy.generation_strategy import GenerationStrategy
 from ax.generation_strategy.generator_spec import GeneratorSpec
 from ax.generation_strategy.transition_criterion import MinTrials
+from ax.generators.torch.botorch_modular.surrogate import ModelConfig, SurrogateSpec
+from botorch.acquisition.logei import qLogNoisyExpectedImprovement
+from botorch.models import SingleTaskGP
+from gpytorch.kernels import MaternKernel
 import numpy as np
 from submitit import DebugJob, LocalJob
 
@@ -391,39 +396,120 @@ def check_sampled_trials(trial_index_to_param, last_samples, fail_count):
 
     continue_optimization = energy_ok and continue_sampling
     return continue_optimization, fail_count
-                
 
-def setup_generation_strategy(num_random_trials=6):
+
+def construct_surrogate_generator_spec(number_of_dims=1):
     """
-    Setup custom generation strategy.
+    Construct surrogate model generator with MaternKernel(2.5) and separate
+    length scale per each dimension. Aquisition function is qLogNEI.
 
     Parameters
     ----------
+    number_of_dims : int, optional
+        Number of dimentions with separate length scales. Defaults to 1.
+    """
+    surrogate_spec = SurrogateSpec(
+        model_configs=[
+            ModelConfig(
+                botorch_model_class=SingleTaskGP,
+                covar_module_class=MaternKernel,
+                covar_module_options={"nu": 2.5, "ard_num_dims": number_of_dims},
+            ),
+        ],
+    )
+
+    generator_spec = GeneratorSpec(
+        generator_enum=Generators.BOTORCH_MODULAR,
+        generator_kwargs={
+            "surrogate_spec": surrogate_spec,
+            "botorch_acqf_class": qLogNoisyExpectedImprovement,
+        },
+    )
+    return generator_spec
+
+
+def setup_center_sobol_custom_gs(generator_spec, node_name="Custom-GP", 
+                                 num_random_trials=6, gs_random_seed=0):
+    """
+    Set up custom generation strategy Center + Sobol + Modular BoTorch with
+    specified `generator_spec`.
+
+    Parameters
+    ----------
+    generator_spec : ax.generation_strategy.generator_spec.GeneratorSpec
+        Generator specifications for custom BoTorch node.
+    node_name : str, optional
+        Name for custom BoTorch node.
     num_random_trials : int, optional
         Number of random trials to perform before starting Bayesian optimization. 
         Default is 6.
+    gs_random_seed : int, optional
+        Random seed for Sobol candidate generation.
 
     Returns
     -------
     ax.modelbridge.generation_strategy.GenerationStrategy
         The configured generation strategy.
     """
-    gs = GenerationStrategy(
-        nodes=[
-            GenerationNode(
-                name="sobol",
-                generator_specs=[GeneratorSpec(generator_enum=Generators.SOBOL)],
-                transition_criteria=[
-                    MinTrials(transition_to="gpei", threshold=num_random_trials)
-                ],
+    botorch_node = GenerationNode(
+        name=node_name,
+        generator_specs=[generator_spec],
+    )
+    sobol_node = GenerationNode(
+        name="Sobol",
+        generator_specs=[
+            GeneratorSpec(
+                generator_enum=Generators.SOBOL,
+                generator_kwargs={"seed": gs_random_seed},
             ),
-            GenerationNode(
-                name="gpei",
-                generator_specs=[GeneratorSpec(generator_enum=Generators.BOTORCH_MODULAR)],
-            ),
+        ],
+        transition_criteria=[
+            MinTrials(
+                threshold=num_random_trials,
+                transition_to=botorch_node.name,
+                use_all_trials_in_exp=True,
+            )
         ]
     )
+    center_node = CenterGenerationNode(next_node_name=sobol_node.name)
+
+    gs = GenerationStrategy(
+        name=f"Center+Sobol+{node_name}",
+        nodes=[center_node, sobol_node, botorch_node]
+    )
     return gs
+
+
+def construct_generation_strategy(number_of_dims, node_name="Custom-GP", 
+                                  num_random_trials=6, gs_random_seed=0):
+    """
+    Costruct custom generation strategy.
+
+    Parameters
+    ----------
+    number_of_dims : int, optional
+        Number of dimentions with separate length scales.
+    node_name : str, optional
+        Name for custom BoTorch node.
+    num_random_trials : int, optional
+        Number of random trials to perform before starting Bayesian optimization. 
+        Default is 6.
+    gs_random_seed : int, optional
+        Random seed for Sobol candidate generation.
+
+    Returns
+    -------
+    ax.modelbridge.generation_strategy.GenerationStrategy
+        The configured generation strategy.
+    """
+    surrogate_generator_spec = construct_surrogate_generator_spec(number_of_dims)
+    generation_strategy = setup_center_sobol_custom_gs(
+        surrogate_generator_spec, 
+        node_name=node_name, 
+        num_random_trials=num_random_trials, 
+        gs_random_seed=gs_random_seed,
+    )
+    return generation_strategy
 
 
 def run_optimization(ax_client, executor, default_ini_file, n_trials, max_parallel_jobs,
@@ -608,9 +694,11 @@ def cluster_optimization(ini_file, save_path=None, wisdom_file=None):
 
     # Prepare parameters for optimization in ax style
     params_for_ax = prepare_params_for_ax(optimization_params["parameters"])
+    num_parameters = len(params_for_ax)
 
     # custom generation strategy
-    number_of_ini_trials = optimization_params.get("number_of_ini_trials", 5)
+    number_of_ini_trials = optimization_params.get("number_of_ini_trials", 
+                                                   max(5, 2 * num_parameters))
     experiment_name = optimization_params.get("experiment_name", "test_optimization")
 
     # Set up optimization client
@@ -640,10 +728,35 @@ def cluster_optimization(ini_file, save_path=None, wisdom_file=None):
         f"Initial random seed for generation strategy: {gs_initialization_random_seed}"
     )
 
-    ax_client.configure_generation_strategy(
-        method=optimization_params.get("generation_strategy_type", "fast"),
-        initialization_budget=number_of_ini_trials,
-    )
+    generation_strategy_type = optimization_params.get("generation_strategy_type", 
+                                                       "fast")
+    if generation_strategy_type in ["fast", "quality"]:
+        ax_client.configure_generation_strategy(
+            method=generation_strategy_type,
+            initialization_budget=number_of_ini_trials,
+        )
+        _logger.info(
+            f"Using default generation strategy with {generation_strategy_type} option."
+        )
+    elif generation_strategy_type == "custom":
+        generation_strategy = construct_generation_strategy(
+            num_parameters, 
+            node_name="Custom-GP", 
+            num_random_trials=number_of_ini_trials, 
+            gs_random_seed=gs_initialization_random_seed,
+        )
+        ax_client.set_generation_strategy(
+            generation_strategy=generation_strategy,
+        )
+        _logger.info(
+            "Using custom generation strategy with Matern(2.5) kernel."
+        )
+    else:
+        err_msg = (
+            "Only generation strategy types ['fast', 'quality', 'custom'] are supported"
+            f"but you passed {generation_strategy_type}."
+        )
+        raise NotImplementedError(err_msg)
 
     max_parallel_jobs = cluster_params.get("max_parallel_jobs", 3)
     executor = setup_job_executor_from_params(cluster_params, save_path,
