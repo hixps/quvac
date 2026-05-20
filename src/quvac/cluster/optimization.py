@@ -29,10 +29,12 @@ from ax.generation_strategy.generation_node import GenerationNode
 from ax.generation_strategy.generation_strategy import GenerationStrategy
 from ax.generation_strategy.generator_spec import GeneratorSpec
 from ax.generation_strategy.transition_criterion import MinTrials
+from ax.generators.torch.botorch_modular.kernels import ScaleMaternKernel
 from ax.generators.torch.botorch_modular.surrogate import ModelConfig, SurrogateSpec
 from botorch.acquisition.logei import qLogNoisyExpectedImprovement
 from botorch.models import SingleTaskGP
-from gpytorch.kernels import MaternKernel
+
+# from gpytorch.kernels import MaternKernel
 import numpy as np
 from submitit import DebugJob, LocalJob
 
@@ -412,8 +414,8 @@ def construct_surrogate_generator_spec(number_of_dims=1):
         model_configs=[
             ModelConfig(
                 botorch_model_class=SingleTaskGP,
-                covar_module_class=MaternKernel,
-                covar_module_options={"nu": 2.5, "ard_num_dims": number_of_dims},
+                covar_module_class=ScaleMaternKernel,
+                # covar_module_options={"ard_num_dims": number_of_dims},
             ),
         ],
     )
@@ -828,9 +830,16 @@ class SurrogateModel:
     """
     def __init__(self, ax_client, metric="N_total"):
         self.experiment_data = ax_client._experiment.fetch_data()
+        # extract custom generation strategy
+        gs = ax_client._generation_strategy._nodes[-1].generator_spec
+        gs_kwargs = gs.generator_kwargs
+        if gs_kwargs is None:
+            gs_kwargs = {}
+        # refit the model
         self.model = Generators.BOTORCH_MODULAR(
             experiment=ax_client._experiment,
             data=self.experiment_data,
+            **gs_kwargs,
         )
         self.metric = metric
 
